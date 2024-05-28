@@ -218,13 +218,13 @@ files = [
 
 [[package]]
 name = "common-osint-model"
-version = "0.5.0"
+version = "0.5.1"
 description = "Converting data from services like BinaryEdge, Censys and Shodan to a common data model."
 optional = false
-python-versions = ">=3.8,<4.0"
+python-versions = "<4.0,>=3.8"
 files = [
-    {file = "common_osint_model-0.5.0-py3-none-any.whl", hash = "sha256:cdb4ac8a582a97a47cab1966b65edf5a0bbec88d744b5eceb04bfeffdf89215a"},
-    {file = "common_osint_model-0.5.0.tar.gz", hash = "sha256:eb85c8ccc41fd5528545ffc53637d96fe2f5c41135bc5b1b2f3686918594a410"},
+    {file = "common_osint_model-0.5.1-py3-none-any.whl", hash = "sha256:6f977f13367b5ae971a530bd595d65ba716e039bebbdd3d37f144ae0baef946e"},
+    {file = "common_osint_model-0.5.1.tar.gz", hash = "sha256:2ad4c4afbeb27f6d7d7692f2304f089f7e764c332f834e0779bc3f580241a72b"},
 ]
 
 [package.dependencies]

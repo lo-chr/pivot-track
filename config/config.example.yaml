@@ -1,0 +1,8 @@
+# Example Config File for Pivot Track
+
+# Configuration of connectors
+connectors:
+  # Find your Shodan API key on https://account.shodan.io
+  shodan:
+    api_key: null
+    rate_limit: 0

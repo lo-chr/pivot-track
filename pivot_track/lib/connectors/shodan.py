@@ -32,6 +32,8 @@ class ShodanConnector():
             
     def host_query(self, host:str, format:str = "source"):
         self.api_throttle()
+        # TODO: Handle APIError: No information available for that IP -> Might even happening when collecting data for com-flat
+        # -> maybe create empty result with IP? -> "refine" param necessary?
         query_result = self.shodan_client.host(host)            # Get shodan host info
         self.update_last_call()
 

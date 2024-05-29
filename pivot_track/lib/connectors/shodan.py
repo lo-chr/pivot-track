@@ -22,13 +22,17 @@ class ShodanConnector():
 
     def generic_query(self, query:str, format:str = "source"):
         self.api_throttle()
-        query_result = self.shodan_client.search(query)         # Execute shodan search
+
+        try:
+            query_result = self.shodan_client.search(query)         # Execute shodan search
+        except shodan.APIError:
+            return None
         self.update_last_call()
 
         if(format == "raw"):     # return in source format (dict)
             return query_result
-        elif(format == "com-flat"): # return in flattend common osint model format (array of dict)
-            return [self.host_query(match['ip_str'], "com-flat") for match in query_result["matches"]]
+        else:
+            return None
             
     def host_query(self, host:str, format:str = "raw"):
         self.api_throttle()

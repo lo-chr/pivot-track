@@ -12,7 +12,7 @@ app.add_typer(query_app, name="query")
 err_console = Console(stderr=True, style="bold red")
 
 @query_app.command("host", help="This command searches for a host on a given database.")
-def query_host(host: str, service:str="shodan", format="raw", printer="json"):
+def query_host(host: str, service:str="shodan", format="raw", output="json"):
     config = utils.load_config()
 
     if(service == "shodan"):
@@ -25,7 +25,7 @@ def query_host(host: str, service:str="shodan", format="raw", printer="json"):
         exit(-1)
 
 @query_app.command("generic", help="This command executes a \"generic\" search on a given database.")
-def query_generic(service:str, query: str, format="raw", printer="json"):
+def query_generic(service:str, query: str, format="raw", output="json"):
     config = utils.load_config()
 
     if(service == "shodan"):

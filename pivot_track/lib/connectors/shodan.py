@@ -32,9 +32,11 @@ class ShodanConnector():
             
     def host_query(self, host:str, format:str = "raw"):
         self.api_throttle()
-        # TODO: Handle APIError: No information available for that IP -> Might even happening when collecting data for com-flat
-        # -> maybe create empty result with IP? -> "refine" param necessary?
-        query_result = self.shodan_client.host(host)            # Get shodan host info
+
+        try:
+            query_result = self.shodan_client.host(host)            # Get shodan host info
+        except shodan.APIError:
+            return None
         self.update_last_call()
 
         if(format == "raw"):     # return in source format (dict)
@@ -42,6 +44,8 @@ class ShodanConnector():
         elif(format == "com-flat"): # return in flattend common osint model format (dict)
             com_host = Host.from_shodan(query_result)
             return com_host.flattened_dict
+        else:
+            return None
 
     def api_throttle(self):
         '''Throttle API consumption'''

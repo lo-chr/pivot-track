@@ -30,7 +30,7 @@ class ShodanConnector():
         elif(format == "com-flat"): # return in flattend common osint model format (array of dict)
             return [self.host_query(match['ip_str'], "com-flat") for match in query_result["matches"]]
             
-    def host_query(self, host:str, format:str = "source"):
+    def host_query(self, host:str, format:str = "raw"):
         self.api_throttle()
         # TODO: Handle APIError: No information available for that IP -> Might even happening when collecting data for com-flat
         # -> maybe create empty result with IP? -> "refine" param necessary?

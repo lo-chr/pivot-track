@@ -54,7 +54,7 @@ class ShodanSourceConnector(SourceConnector, HostQuery):
             return None
 
     def _api_throttle(self):
-        super()
+        super()._api_throttle()
 
     def _update_last_call(self):
-        super()
+        super()._update_last_call

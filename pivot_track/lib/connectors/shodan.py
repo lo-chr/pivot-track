@@ -9,10 +9,24 @@ import shodan
 
 class ShodanConnector():
     """Connector for Shodan"""
-
-    shodan_client = None
-    config = None
-    last_call = 0
+    OPENSEARCH_FIELD_PROPERTIES = {
+        "shodan-host-raw": {   
+            'data.ssl.cert.serial' : {
+                'type' : 'keyword'
+            } ,
+            'data.ip_str' : {
+                'type' : 'ip'
+            } ,
+            'ip_str' : {
+                'type' : 'ip'
+            }
+        } ,
+        "shodan-generic-raw": {
+            'matches.ip_str' : {
+                'type' : 'ip'
+            }
+        }
+    }
 
     def __init__(self, config):
         self.config = config            # Set Config data

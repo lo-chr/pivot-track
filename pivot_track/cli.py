@@ -26,11 +26,7 @@ def query_host(host: str, service:str="shodan", format="raw", output="json"):
    
     if(output == "opensearch"):
         opensearch = OpenSearchConnector(config['connectors']['opensearch'])
-        host_query_result['pivottrack'] = {
-            "query_timestamp" : datetime.now(timezone.utc).isoformat(),
-            "query_string": host
-        }
-        opensearch.index_document(host_query_result, f"{config['connectors']['opensearch']['shodan_prefix']}-host-raw")
+        opensearch.index_query_result(query = host, query_result = host_query_result, index = "shodan-host-raw")
     elif(output == "json"):
         print(utils.printable_result(host_query_result))
 
@@ -47,63 +43,17 @@ def query_generic(service:str, query: str, format="raw", output="json"):
 
     if(output == "opensearch"):
         opensearch = OpenSearchConnector(config['connectors']['opensearch'])
-        generic_query_result['pivottrack'] = {
-            "query_timestamp" : datetime.now(timezone.utc).isoformat(),
-            "query_string": query
-        }
-        opensearch.index_document(generic_query_result, f"{config['connectors']['opensearch']['shodan_prefix']}-generic-raw")
+        opensearch.index_query_result(query = query, query_result = generic_query_result, index = "shodan-generic-raw")
     elif(output == "json"):
         print(utils.printable_result(generic_query_result))
 
 @app.command("init-opensearch")
 def init_opensearch():
     config = utils.load_config()
-    
     opensearch = OpenSearchConnector(config['connectors']['opensearch'])
 
-    # Setup Shodan Host Raw Index
-    shodan_host_raw_index = f"{config['connectors']['opensearch']['shodan_prefix']}-host-raw"
-    shodan_host_raw_index_mappings = {
-        'mappings' : {
-            'properties' : {
-                'data.ssl.cert.serial' : {
-                    'type' : 'keyword'
-                } ,
-                'data.ip_str' : {
-                    'type' : 'ip'
-                } ,
-                'ip_str' : {
-                    'type' : 'ip'
-                } ,
-                'pivottrack.query_timestamp' : {
-                    'type' : 'date'
-                } ,
-                'pivottrack.query_string' : {
-                    'type' : 'keyword'
-                }
-            }
-        }
-    }
-    opensearch.create_index(shodan_host_raw_index, shodan_host_raw_index_mappings)
-
-    # Setup Shodan Generic Raw Index
-    shodan_generic_raw_index = f"{config['connectors']['opensearch']['shodan_prefix']}-generic-raw"
-    shodan_generic_raw_index_mappings = {
-        'mappings' : {
-            'properties' : {
-                'matches.ip_str' : {
-                    'type' : 'ip'
-                } ,
-                'pivottrack.query_timestamp' : {
-                    'type' : 'date'
-                } ,
-                'pivottrack.query_string' : {
-                    'type' : 'keyword'
-                }
-            }
-        }
-    }
-    opensearch.create_index(shodan_generic_raw_index, shodan_generic_raw_index_mappings)
+    for index_name, index_field_properties in ShodanConnector.OPENSEARCH_FIELD_PROPERTIES.items():
+        opensearch.init_pivottrack_query_index(index_name, index_field_properties)
 
 if __name__ == "__main__":
     app()

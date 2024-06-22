@@ -20,7 +20,6 @@ def printable_result(input, format:str = "json"):
         return "Not implemented yet"
 
 def print_json(input, indent=2):
-    print(str(type(input)))
     if(type(input) == dict or type(input) == list):
         return json.dumps(input, indent=indent)
     else:
@@ -29,3 +28,9 @@ def print_json(input, indent=2):
             return json.dumps(loaded, indent=indent)
         except ValueError as e:
             return None
+
+def find_connector_class(parent_class, name:str):
+    for connector in parent_class.__subclasses__():
+        if name in connector.__name__.lower():
+            return connector 
+    return None

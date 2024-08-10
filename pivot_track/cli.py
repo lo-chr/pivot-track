@@ -1,4 +1,5 @@
 import typer
+from typing_extensions import Annotated
 from rich import print
 from rich.console import Console
 from datetime import datetime, timezone
@@ -17,7 +18,7 @@ config = utils.load_config()
 # TODO rename "raw" format to "source" format
 
 @query_app.command("host", help="This command searches for a host on a given OSINT source.")
-def query_host(service:str, host: str, format="raw", output="json"):
+def query_host(service:str, host: str, raw : Annotated[bool, typer.Option()]=True, output: Annotated[str, typer.Option()] = "json"):
     try:  
         host_query_result = query.host(config = config, host = host, service=service)
         _handle_result_output(query = host, query_result = host_query_result, output = output, index_name = f"{service}-host-raw")
@@ -26,7 +27,7 @@ def query_host(service:str, host: str, format="raw", output="json"):
         exit(-1)
 
 @query_app.command("generic", help="This command executes a \"generic\" search on a given OSINT source.")
-def query_generic(service:str, search: str, format="raw", output="json"):
+def query_generic(service:str, search: str, raw : Annotated[bool, typer.Option()]=True, output: Annotated[str, typer.Option()] = "json"):
     try:
         generic_query_result = query.host_search(config = config, search = search, service = service)
         _handle_result_output(query = search, query_result = generic_query_result, output = output, index_name = f"{service}-generic-raw")

@@ -4,7 +4,7 @@ from rich.console import Console
 from datetime import datetime, timezone
 
 from .lib import utils, query
-from .lib.connectors import ShodanSourceConnector, OpenSearchConnector
+from .lib.connectors import OpenSearchConnector, SourceConnector
 
 app = typer.Typer(help="Pivot track helps TI analysts to pivot on IoC and to track their research.")
 query_app = typer.Typer(help="This module helps to query different sources of OSINT platforms and databases.")
@@ -34,11 +34,18 @@ def query_generic(service:str, search: str, format="raw", output="json"):
 @app.command("init-opensearch")
 def init_opensearch():
     opensearch = OpenSearchConnector(config['connectors']['opensearch'])
-    for index_name, index_field_properties in ShodanSourceConnector.OPENSEARCH_FIELD_PROPERTIES.items():
-        opensearch.init_pivottrack_query_index(index_name, index_field_properties)
+
+    for connector in utils.connector_classes_by_parent(SourceConnector):
+        if connector.OPENSEARCH_FIELD_PROPERTIES != None:
+            for index_name, index_field_properties in connector.OPENSEARCH_FIELD_PROPERTIES.items():
+                opensearch.init_pivottrack_query_index(index_name, index_field_properties)
 
 def _handle_result_output(query:str, query_result:dict, output:str, index_name:str):
     if(output == "opensearch"):
+        if type(query_result) == list:
+            query_result = {
+                'result': query_result
+                }
         OpenSearchConnector(config['connectors']['opensearch']).index_query_result(query = query, query_result = query_result, index = index_name)
     elif(output == "json"):
         print(utils.printable_result(query_result))

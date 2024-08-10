@@ -25,6 +25,7 @@ class OpenSearchConnector():
         if(self.config['index_prefix'] == None):
             self.config['index_prefix'] = ''
 
+    # TODO Create function for index settings (i.E. max_docvalue_fields_search)
     def init_pivottrack_query_index(self, index_name:str, index_field_properties:dict = None):
         index_name = f"{self.config['index_prefix']}{index_name}"
         index_mappings = {
@@ -51,7 +52,7 @@ class OpenSearchConnector():
             logger.info(f"Opensearch index {index_name} did already exist.")
             return None
     
-    def index_query_result(self, query:str, query_result:str, index:str):
+    def index_query_result(self, query:str, query_result:dict, index:str):
         index = f"{self.config['index_prefix']}{index}"
         query_result['pivottrack'] = {
             "query_timestamp" : datetime.now(timezone.utc).isoformat(),

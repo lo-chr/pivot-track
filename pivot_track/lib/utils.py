@@ -29,8 +29,12 @@ def print_json(input, indent=2):
         except ValueError as e:
             return None
 
+# TODO Rename in find_connector_class_by_name
 def find_connector_class(parent_class, name:str):
     for connector in parent_class.__subclasses__():
         if name in connector.__name__.lower():
             return connector 
     return None
+
+def connector_classes_by_parent(parent_class):
+    return parent_class.__subclasses__()

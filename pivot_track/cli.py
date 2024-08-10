@@ -11,10 +11,13 @@ query_app = typer.Typer(help="This module helps to query different sources of OS
 app.add_typer(query_app, name="query")
 err_console = Console(stderr=True, style="bold red")
 
+# TODO Introduce Config Loading via Environment var
 config = utils.load_config()
 
-@query_app.command("host", help="This command searches for a host on a given database.")
-def query_host(host: str, service:str="shodan", format="raw", output="json"):
+# TODO rename "raw" format to "source" format
+
+@query_app.command("host", help="This command searches for a host on a given OSINT source.")
+def query_host(service:str, host: str, format="raw", output="json"):
     try:  
         host_query_result = query.host(config = config, host = host, service=service)
         _handle_result_output(query = host, query_result = host_query_result, output = output, index_name = f"{service}-host-raw")
@@ -22,7 +25,7 @@ def query_host(host: str, service:str="shodan", format="raw", output="json"):
         err_console.print("This data source does not exist. Use this command with \"--help\" for more information.")
         exit(-1)
 
-@query_app.command("generic", help="This command executes a \"generic\" search on a given database.")
+@query_app.command("generic", help="This command executes a \"generic\" search on a given OSINT source.")
 def query_generic(service:str, search: str, format="raw", output="json"):
     try:
         generic_query_result = query.host_search(config = config, search = search, service = service)

@@ -60,16 +60,18 @@ class CensysSourceConnector(SourceConnector, HostQuery):
         try:
             hosts = self.censys_client.v2.hosts
             query_result = hosts.view(document_id=host)
+            self._update_last_call()
             return query_result
         except CensysAPIException:
             return None
     
     def query_host_search(self, query: str):
         self._api_throttle()
-        
+
         try:
             hosts = self.censys_client.v2.hosts
             query_result = hosts.search(query = query)()
+            self._update_last_call()
             return query_result
         except CensysAPIException:
             return None

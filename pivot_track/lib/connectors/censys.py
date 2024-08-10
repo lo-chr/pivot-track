@@ -51,11 +51,12 @@ class CensysSourceConnector(SourceConnector, HostQuery):
         logger.debug("Created new instance of class CensysSourceConnector")
         self.config = config            # Set Config data
         self.censys_client = SearchClient(api_id = self.config['api_id'], api_secret = self.config['api_secret'])
-        # TODO: Set Last Call Timestamp for Throttling
-        #self._update_last_call()
+        # Set Last Call Timestamp for Throttling
+        self._update_last_call()
 
     def query_host(self, host: str):
-        # TODO: Introduce API Throttling for Censys
+        self._api_throttle()
+
         try:
             hosts = self.censys_client.v2.hosts
             query_result = hosts.view(document_id=host)
@@ -64,7 +65,8 @@ class CensysSourceConnector(SourceConnector, HostQuery):
             return None
     
     def query_host_search(self, query: str):
-        # TODO: Introduce API Throttling for Censys
+        self._api_throttle()
+        
         try:
             hosts = self.censys_client.v2.hosts
             query_result = hosts.search(query = query)()

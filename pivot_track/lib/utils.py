@@ -13,22 +13,6 @@ def load_config(path:str = None):
         config = yaml.safe_load(config_file)
     return config
 
-def printable_result(input, format:str = "json"):
-    if(format == "json"):
-        return print_json(input)
-    else:
-        return "Not implemented yet"
-
-def print_json(input, indent=2):
-    if(type(input) == dict or type(input) == list):
-        return json.dumps(input, indent=indent)
-    else:
-        try:
-            loaded = json.loads(input)
-            return json.dumps(loaded, indent=indent)
-        except ValueError as e:
-            return None
-
 # TODO Rename in find_connector_class_by_name
 def find_connector_class(parent_class, name:str):
     for connector in parent_class.__subclasses__():

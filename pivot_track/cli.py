@@ -11,7 +11,7 @@ from .lib.connectors import OpenSearchConnector, SourceConnector
 
 from .lib import output_util
 
-app = typer.Typer(help="Pivot track helps TI analysts to pivot on IoC and to track their research.")
+app = typer.Typer(help="Pivot Track helps TI analysts to pivot on IoC and to track their research.")
 query_app = typer.Typer(help="This module helps to query different sources of OSINT platforms and databases.")
 app.add_typer(query_app, name="query")
 err_console = Console(stderr=True, style="bold red")
@@ -68,7 +68,7 @@ def query_generic(service:str,
         err_console.print("This data source does not exist. Use this command with \"--help\" for more information.")
         exit(-1)
 
-@app.command("init-opensearch")
+@app.command("init-opensearch", help="This command helps you initializing opensearch indicies, required for the '--output opensearch' option.")
 def init_opensearch():
     opensearch = OpenSearchConnector(config['connectors']['opensearch'])
 

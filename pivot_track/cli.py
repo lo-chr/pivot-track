@@ -85,6 +85,18 @@ def query_generic(service:str,
         err_console.print("This data source does not exist. Use this command with \"--help\" for more information.")
         exit(-1)
 
+@app.command("track", help="This command runs pivottrack in non-interactive mode, to execute queries automatically.")
+def automatic_track(
+    config_path: Annotated[str, typer.Option(envvar="PIVOTTRACK_CONFIG")] = None,
+    tracking_definition_path: Annotated[str, typer.Option(envvar="PIVOTTRACK_TRACK_DEFINITIONS")] = None
+):
+    config = init_application(config_path)
+    logger = logging.getLogger(__name__)
+    logger.info(f"Starting automatic tracking service with config file \"{config_path}\" and tracking definitions \"{tracking_definition_path}\".")
+    
+    # Implement actual feature
+    raise NotImplementedError("This is not implemented, yet!")
+
 @app.command("init-opensearch", help="This command helps you initializing opensearch indicies, required for the '--output opensearch' option.")
 def init_opensearch(config_path: Annotated[str, typer.Option(envvar="PIVOTTRACK_CONFIG")] = None):
     config = init_application(config_path)

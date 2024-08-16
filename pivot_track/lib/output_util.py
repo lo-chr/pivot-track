@@ -1,4 +1,4 @@
-import json
+import json, logging
 
 from rich.table import Table
 from rich import print
@@ -6,8 +6,12 @@ from rich import print
 from common_osint_model import Host
 from .connectors import OpenSearchConnector
 
+logger = logging.getLogger(__name__)
+
 # TODO Include further COM types (certificates, domains, etc.)
 def print_com_host_table(hosts):
+    logger.debug("Printing Host Table")
+
     table = Table("IP", "First Seen", "Last Seen", "Source", "Domains", show_lines=True)
     if type(hosts) == Host:
         hosts = [hosts]
@@ -16,6 +20,7 @@ def print_com_host_table(hosts):
     print(table)
 
 def print_json(input, indent=2):
+    logger.debug("Printing JSON Output")
     if(type(input) == dict or type(input) == list):
         if(type(input) == list and len(input) == 1):
             input = input[0]

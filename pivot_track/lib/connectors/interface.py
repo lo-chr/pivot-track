@@ -1,6 +1,9 @@
+import logging, time
+
 from abc import ABC, abstractmethod
 from datetime import datetime
-import time
+
+logger = logging.getLogger(__name__)
 
 class SourceConnector(ABC):
     """Abstract class, providing shared connector capabilities"""
@@ -10,6 +13,8 @@ class SourceConnector(ABC):
     @abstractmethod
     def _api_throttle(self):
         '''Throttle API consumption'''
+
+        logger.debug("Throttle API consumption.")
         # Get current timestamp
         current_timestamp = int(round(datetime.now().timestamp()) * 1000)
         # Default to 1 Sec Rate Limit if not set
@@ -20,11 +25,14 @@ class SourceConnector(ABC):
         time_to_wait = ((self.last_call + time_between_calls) - current_timestamp) / 1000
         # Wait
         if(time_to_wait > 0):
+            logger.debug(f"Throttle API consumption. Wait {time_to_wait} Seconds.")
             time.sleep(time_to_wait)
     
     @abstractmethod
     def _update_last_call(self):
         '''Update last_call var for API consumption throttling'''
+
+        logger.debug("Update last_call timestamp for API consumption throttling")
         self.last_call = int(round(datetime.now().timestamp()) * 1000)
 
 class HostQuery(ABC):

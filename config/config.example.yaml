@@ -1,8 +1,23 @@
 # Example Config File for Pivot Track
-
+# Configuration for logging
+logging:
+  level: "INFO"
+  logfile: "pivottrack.log"   # Can also be full path
 # Configuration of connectors
 connectors:
   # Find your Shodan API key on https://account.shodan.io
   shodan:
-    api_key: null
-    rate_limit: 0
+    api_key: "CHANGEME"
+    rate_limit: 1     # API request per second
+  # Find your Censys API data on https://search.censys.io/account/api
+  censys:
+    api_id: "CHANGEME"
+    api_secret: "CHANGEME"
+    rate_limit: 1     # API request per second
+  opensearch:
+    host: "CHANGEME"
+    port: 9200
+    user: "CHANGEME"
+    pass: "CHANGEME"
+    verify_certs: True 
+    index_prefix: "pivottrack"

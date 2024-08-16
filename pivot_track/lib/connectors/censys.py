@@ -1,5 +1,4 @@
 import logging
-import json
 
 from censys.search import SearchClient, CensysHosts
 from censys.common.exceptions import CensysAPIException

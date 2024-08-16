@@ -1,15 +1,10 @@
 import typer
 from typing_extensions import Annotated
-from rich import print
 from rich.console import Console
-from datetime import datetime, timezone
-
-from common_osint_model import Host
 
 from .lib import utils, query
 from .lib.connectors import OpenSearchConnector, SourceConnector
 
-from .lib import output_util
 
 app = typer.Typer(help="Pivot Track helps TI analysts to pivot on IoC and to track their research.")
 query_app = typer.Typer(help="This module helps to query different sources of OSINT platforms and databases.")

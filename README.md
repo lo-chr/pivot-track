@@ -1,5 +1,5 @@
 # Pivot Track
-Pivot Track helps TI analysts to pivot on IoC and to track their research.
+Pivot Track helps TI analysts to pivot on IoC and to track their research results.
 ```
 Usage: pivottrack [OPTIONS] COMMAND [ARGS]...                                                                
                                                                                                             

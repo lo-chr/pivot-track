@@ -4,7 +4,7 @@ from rich.console import Console
 from pathlib import Path
 
 from .lib import utils, query, track
-from .lib.connectors import OpenSearchConnector, SourceConnector
+from .lib.connectors import OpenSearchConnector, SourceConnector, HostQuery
 
 def init_application(config_path:str = None):
     # Load Config
@@ -42,10 +42,11 @@ def query_host(service:str,
         exit(-1)
     
     config = init_application(config_path)
+    source_connector = utils.find_connector_class(HostQuery, name=service)
     try:  
         host_query_result = query.host(config = config,
                                        host = host,
-                                       service=service,
+                                       source=source_connector,
                                        raw=raw)
         query.output(config = config,
                      query_result = host_query_result,
@@ -71,8 +72,9 @@ def query_generic(service:str,
         exit(-1)
     
     config = init_application(config_path)
+    source_connector = utils.find_connector_class(HostQuery, name=service)
     try:
-        generic_query_result = query.host_search(config = config, search = search, service = service, raw=raw, refine=refine)
+        generic_query_result = query.host_search(config = config, search = search, source = source_connector, raw=raw, refine=refine)
         query.output(config = config,
                      query_result = generic_query_result,
                      output_format=output,

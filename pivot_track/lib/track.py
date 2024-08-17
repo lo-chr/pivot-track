@@ -38,7 +38,7 @@ class Tracking:
                 query_result = query.host_search(
                     config = config,
                     search=host_search,
-                    service = source_string,
+                    source = source,
                     refine=definition['query']['settings']['refine']
                 )
                 query.output(

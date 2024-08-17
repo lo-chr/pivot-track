@@ -8,7 +8,7 @@ from common_osint_model import Host
 logger = logging.getLogger(__name__)
 
 # TODO: reduce code duplication for connection
-
+# TODO: Right now this is inconsistent, switch to "stringless" invocation of query (similar to track interface)
 def host(config:dict, host:str, service:str, raw:bool = False):
     logger.info(f"Query for \"{host}\" with service {service}. Raw Output {"activated" if raw else "deactivated"}.")
     
@@ -34,6 +34,7 @@ def host(config:dict, host:str, service:str, raw:bool = False):
         logger.info("Raw output required. Returning raw data.")
         return [host_query_result]
 
+# TODO: Right now this is inconsistent, switch to "stringless" invocation of query (similar to track interface)
 def host_search(config:dict, search:str, service:str, raw:bool = False, refine:bool=False):
     logger.info(f"Search for \"{search}\" with service {service}. Raw Output {"activated" if raw else "deactivated"}. Refine {"activated" if refine else "deactivated"}")
     
@@ -73,6 +74,7 @@ def host_search(config:dict, search:str, service:str, raw:bool = False, refine:b
         logger.info("Raw output required. Returning raw data.")
         return raw_search_query_result
 
+# TODO: Switch output to somewhere else
 def output(config:dict, query_result, output_format:str, query_command:str, query:str, raw = False, service:str = ""):
     if output_format == "cli":
         output_util.print_com_host_table(query_result)

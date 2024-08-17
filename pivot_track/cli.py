@@ -3,7 +3,7 @@ from typing_extensions import Annotated
 from rich.console import Console
 from pathlib import Path
 
-from .lib import utils, query
+from .lib import utils, query, track
 from .lib.connectors import OpenSearchConnector, SourceConnector
 
 def init_application(config_path:str = None):
@@ -88,14 +88,14 @@ def query_generic(service:str,
 @app.command("track", help="This command runs pivottrack in non-interactive mode, to execute queries automatically.")
 def automatic_track(
     config_path: Annotated[str, typer.Option(envvar="PIVOTTRACK_CONFIG")] = None,
-    tracking_definition_path: Annotated[str, typer.Option(envvar="PIVOTTRACK_TRACK_DEFINITIONS")] = None
+    definition_path: Annotated[str, typer.Option(envvar="PIVOTTRACK_TRACK_DEFINITIONS")] = None,
+    interval: Annotated[int, typer.Option(envvar="PIVOTTRACK_TRACK_INTERVAL")] = 600    # Default to 10 minutes
 ):
     config = init_application(config_path)
     logger = logging.getLogger(__name__)
-    logger.info(f"Starting automatic tracking service with config file \"{config_path}\" and tracking definitions \"{tracking_definition_path}\".")
+    logger.info(f"Starting automatic tracking service with config file \"{config_path}\" and tracking definitions \"{definition_path}\".")
     
-    # Implement actual feature
-    raise NotImplementedError("This is not implemented, yet!")
+    track.Tracking.execute_tracker(config=config, tracking_definition_path=Path(definition_path), interval = interval)
 
 @app.command("init-opensearch", help="This command helps you initializing opensearch indicies, required for the '--output opensearch' option.")
 def init_opensearch(config_path: Annotated[str, typer.Option(envvar="PIVOTTRACK_CONFIG")] = None):

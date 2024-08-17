@@ -38,17 +38,23 @@ class Tracking:
                 query_result = query.host_search(
                     config = config,
                     search=host_search,
-                    source = source,
-                    refine=definition['query']['settings']['refine']
+                    source = source
                 )
-                query.output(
-                    config = config,
-                    query_result = query_result,
-                    output_format=definition['output'],
-                    query = host_search,
-                    service = source_string,
-                    query_command = "generic"
-                )
+                if not definition['query']['settings']['refine']:
+                    query.output(
+                        config = config,
+                        query_result = query_result,
+                        output_format=definition['output'],
+                    ) 
+                else:
+                    com_elements = query_result.com_result if query_result.is_collection else [query_result.com_result]
+                    for com_element in com_elements:
+                        result = query.host(config = config, host = com_element.ip, source = source)
+                        query.output(
+                            config = config,
+                            query_result = result,
+                            output_format=definition['output'],
+                        )
     
     def load_definitions(tracking_definition_path:Path = None) -> tuple[list, dict]:
         if tracking_definition_path == None or not tracking_definition_path.exists():

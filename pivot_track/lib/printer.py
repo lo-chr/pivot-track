@@ -4,12 +4,11 @@ from rich.table import Table
 from rich import print
 
 from common_osint_model import Host
-from .connectors import OpenSearchConnector
 
 logger = logging.getLogger(__name__)
 
 # TODO Include further COM types (certificates, domains, etc.)
-def print_com_host_table(hosts):
+def com_host_table(hosts):
     logger.debug("Printing Host Table")
 
     table = Table("IP", "First Seen", "Last Seen", "Source", "Domains", show_lines=True)
@@ -19,11 +18,17 @@ def print_com_host_table(hosts):
         table.add_row(host.ip, str(host.first_seen), str(host.last_seen), host.source, '\n'.join([domain.domain for domain in host.domains]))
     print(table)
 
-def print_json(input, indent=2):
+def json(input, indent=2):
     logger.debug("Printing JSON Output")
-    if(type(input) == dict or type(input) == list):
-        if(type(input) == list and len(input) == 1):
-            input = input[0]
+
+    if isinstance(input, list) and len(input) == 1:
+        input = input[0]
+    
+    if isinstance(input, Host):
+        printable = json.dumps(input.flattened_dict, indent=indent)
+    elif isinstance(input, list) and isinstance(input[0], Host):
+        printable = json.dumps([element.flattened_dict for element in input], indent=indent)
+    elif(type(input) == dict or type(input) == list):
         printable = json.dumps(input, indent=indent)
     else:
         try:
@@ -33,13 +38,3 @@ def print_json(input, indent=2):
             # TODO add Error Logging
             printable = ""
     print(printable)
-
-# TODO Consider moving this to opensearch module?
-def opensearch_output(opensearch_config:dict, query:str, query_result, index_name):
-    if type(query_result) == list and len(query_result) > 1:
-        query_result = {
-            'result': query_result
-        }
-    elif type(query_result) == list and len(query_result) == 1:
-        query_result = query_result[0]
-    OpenSearchConnector(opensearch_config).index_query_result(query = query, query_result = query_result, index = index_name)

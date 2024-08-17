@@ -1,98 +1,91 @@
 import logging
 
-from .connectors import HostQuery, ShodanSourceConnector, CensysSourceConnector
-from . import output_util, utils
-
-from common_osint_model import Host
+from .connectors import HostQuery, ShodanSourceConnector, CensysSourceConnector, SourceConnector, OpenSearchConnector
+from . import printer
+from common_osint_model import Host, BaseModel
 
 logger = logging.getLogger(__name__)
 
-# TODO: reduce code duplication for connection
-def host(config:dict, host:str, source:HostQuery, raw:bool = False):
-    logger.info(f"Query for \"{host}\" with service {source.__name__}. Raw Output {"activated" if raw else "deactivated"}.")
-    
-    if source == None:
-        logger.warn(f"Did not find connector for service {service}. Raising NotImplementedError Exception.")
-        raise NotImplementedError
-    connection = source(config['connectors'][source.__name__.lower().removesuffix("sourceconnector")])
 
-    host_query_result = connection.query_host(host)
-    if not raw:
+class QueryResult:
+    def __init__(self, raw_query_result = None, query_command:str = "", search_term:str = ""):
+        self.raw_result = raw_query_result
+        self.query_command = query_command
+        self.search_term = search_term
+
+    @property
+    def com_result(self) -> BaseModel | list[BaseModel]:
         logger.info("Convert raw data to Common OSINT Model.")
-        if isinstance(connection, ShodanSourceConnector):
+        if self.source is ShodanSourceConnector:
             logger.debug("Trying to convert raw Shodan result to Common OSINT Model.")
-            return [Host.from_shodan(host_query_result)]
-        elif isinstance(connection, CensysSourceConnector):
+            return Host.from_shodan(self.raw_result) if not self.is_collection else [Host.from_shodan(element) for element in self.raw_result['matches']]
+        elif self.source is CensysSourceConnector:
             logger.debug("Trying to convert raw Censys result to Common OSINT Model")
-            return [Host.from_censys(host_query_result)]
+            return Host.from_censys(self.raw_result) if not self.is_collection else [Host.from_censys(element) for element in self.raw_result]
         else:
-            logger.warn(f"No Common OSINT Model translation available for {source.__name__}. Raising NotImplementedError Exception.")
+            logger.warn(f"No Common OSINT Model translation available for {self.source.__name__}. Raising NotImplementedError Exception.")
             raise NotImplementedError
-    else:
-        logger.info("Raw output required. Returning raw data.")
-        return [host_query_result]
 
-def host_search(config:dict, search:str, source:HostQuery, raw:bool = False, refine:bool=False):
-    logger.info(f"Search for \"{search}\" with service {source.__name__}. Raw Output {"activated" if raw else "deactivated"}. Refine {"activated" if refine else "deactivated"}")
+    @property
+    def source(self) -> SourceConnector:
+        # Cases for single host query
+        if type(self.raw_result) == dict:
+            if 'data' in self.raw_result.keys() and len(self.raw_result['data']) > 0 and '_shodan' in self.raw_result['data'][0].keys():
+                return ShodanSourceConnector
+            elif 'services' in self.raw_result.keys() and 'last_updated_at' in self.raw_result.keys():
+                return CensysSourceConnector
+            # Cases for generic host query
+            elif 'matches' in self.raw_result.keys() and 'total' in self.raw_result.keys():
+                return ShodanSourceConnector
+            else:
+                logger.warn("Could not determine SourceConnector typer.")
+                return None
+        elif type(self.raw_result) == list:
+            return CensysSourceConnector
+    
+
+    @property
+    def is_collection(self) -> bool:
+        if (type(self.raw_result) == dict and 'matches' in self.raw_result.keys() and 'total' in self.raw_result.keys()) or type(self.raw_result) == list:
+            return True
+        else:
+            return False
+    
+    @property
+    def element_count(self) -> int:
+        if self.is_collection and self.source is ShodanSourceConnector:
+            return len(self.raw_result['matches'])
+        elif self.is_collection and self.source is CensysSourceConnector:
+            return len(self.raw_result)
+        elif not self.is_collection:
+            return 1        # Case for only one element (no collection)
+
+def host(config:dict, host:str, source:HostQuery) -> QueryResult:
+    logger.info(f"Query for \"{host}\" with service {source.__name__}.")
     
     if source == None:
         logger.warn(f"Did not find connector for service {service}. Raising NotImplementedError Exception.")
         raise NotImplementedError
     connection = source(config['connectors'][source.__name__.lower().removesuffix("sourceconnector")])
+    return QueryResult(connection.query_host(host), query_command = "host", search_term=host)
+  
+
+def host_search(config:dict, search:str, source:HostQuery) -> QueryResult:
+    logger.info(f"Search for \"{search}\" with service {source.__name__}.")
     
-    search_query_result = connection.query_host_search(search)
-    if not raw:
-        logger.debug("Convert raw data to Common OSINT Model.")
-        if type(search_query_result) == dict:     # If True -> Shodan
-            query_matches = search_query_result['matches']
-        else:
-            query_matches = search_query_result
-        # TODO error handling for limitied paging while having more results
-        logger.debug(f"Query had {len(query_matches)} matches.")
+    if source == None:
+        logger.warn(f"Did not find connector for service {service}. Raising NotImplementedError Exception.")
+        raise NotImplementedError
+    connection = source(config['connectors'][source.__name__.lower().removesuffix("sourceconnector")])
+    return QueryResult(connection.query_host_search(search), query_command="generic", search_term=search)
 
-        result_set = list()
-        for query_match in query_matches:
-            if isinstance(connection, ShodanSourceConnector):
-                logger.debug("Trying to convert raw Shodan result to Common OSINT Model.")
-                entry_host = Host.from_shodan(query_match)
-            elif isinstance(connection, CensysSourceConnector):
-                logger.debug("Trying to convert raw Censys result to Common OSINT Model")
-                entry_host = Host.from_censys(query_match)
-            else:
-                logger.warn(f"No Common OSINT Model translation available for service {source.__name__}. Raising NotImplementedError Exception.")
-                raise NotImplementedError
-            
-            if refine:
-                logger.debug(f"Refining dataset for host \"{entry_host.ip}\".")
-                entry_host = host(config = config, host = entry_host.ip, source=source)[0]
-            result_set.append(entry_host)
-        return result_set
-    else:
-        logger.info("Raw output required. Returning raw data.")
-        return search_query_result
-
-# TODO: Switch output to somewhere else
-def output(config:dict, query_result, output_format:str, query_command:str, query:str, raw = False, service:str = ""):
+# TODO: Move output to somewhere else
+def output(config:dict, query_result:QueryResult, output_format:str = "cli", raw = False):
     if output_format == "cli":
-        output_util.print_com_host_table(query_result)
-    elif output_format == "json":
-        if not raw:
-            if type(query_result) == list:
-                output_util.print_json([entry.flattened_dict for entry in query_result])
-            else:
-                output_util.print_json(query_result.flattened_dict)
-        else:
-            output_util.print_json(query_result)
-    elif output_format == "opensearch":
-        if raw:
-            index_name = f"{service}-{query_command}-raw"
-            output_util.opensearch_output(opensearch_config = config['connectors']['opensearch'], query=query, query_result=query_result, index_name=index_name)
-        else:
-            index_name = f"com-{query_command}"
-            if type(query_result) == Host:
-                query_result = [query_result]
-            
-            for element in query_result:
-                # TODO this is a little hacky right now, but otherwise it's hard to get this data into opensearch...
-                element.services = []
-                output_util.opensearch_output(opensearch_config = config['connectors']['opensearch'], query=query, query_result=element.flattened_dict, index_name=index_name)
+        printer.com_host_table(query_result.com_result)
+    
+    if output_format == "json":
+        printer.json(query_result.com_result) if not raw else printer.json(query_result.raw_result)
+
+    if output_format == "opensearch":
+        OpenSearchConnector(config['connectors']['opensearch']).query_output(query_result=query_result, raw=raw)

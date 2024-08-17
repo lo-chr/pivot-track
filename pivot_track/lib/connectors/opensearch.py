@@ -1,11 +1,14 @@
 from datetime import datetime, timezone
 from opensearchpy import OpenSearch, OpenSearchException
+from common_osint_model import Host
+
+from .interface import OutputConnector
 
 import logging
 
 logger = logging.getLogger(__name__)
 
-class OpenSearchConnector():
+class OpenSearchConnector(OutputConnector):
     opensearch_client = None
     config = None
 
@@ -72,3 +75,23 @@ class OpenSearchConnector():
         except OpenSearchException as e:
             logger.error(f"OpenSearchException while indexing query {query} results to index {index}. Message: {e}")
             return None
+    
+    def query_output(self, query_result, raw=False):
+        service = query_result.source.__name__.lower().removesuffix("sourceconnector")
+        if raw:
+            query_result_payload = query_result.raw_result
+            if type(query_result_payload) == list and len(query_result_payload) > 1:
+                query_result_payload = {
+                    'result': query_result_payload
+                }
+            elif type(query_result_payload) == list and len(query_result_payload) == 1:
+                query_result_payload = query_result_payload[0]
+            self.index_query_result(query = query_result.search_term, query_result = query_result_payload, index = f"{service}-{query_result.query_command}-raw")
+        else:
+            com_results = query_result.com_result
+            if isinstance(com_results, Host):
+                com_results = [com_results]
+            for element in com_results:
+                # TODO this is a little hacky right now, but otherwise it's hard to get this data into opensearch...
+                element.services = []
+                self.index_query_result(query = query_result.search_term, query_result = element.flattened_dict, index = f"com-{query_result.query_command}")

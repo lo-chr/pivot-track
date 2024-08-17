@@ -40,5 +40,11 @@ class HostQuery(ABC):
     def query_host_search(self, query:str):
         raise NotImplementedError
     
+    @abstractmethod
     def query_host(self, host:str):
+        raise NotImplementedError
+
+class OutputConnector(ABC):
+    @abstractmethod
+    def query_output(self, query_result = None, raw=False):
         raise NotImplementedError

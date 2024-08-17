@@ -46,15 +46,13 @@ def query_host(service:str,
     try:  
         host_query_result = query.host(config = config,
                                        host = host,
-                                       source=source_connector,
-                                       raw=raw)
-        query.output(config = config,
-                     query_result = host_query_result,
-                     output_format=output,
-                     query = host,
-                     raw = raw,
-                     service = service,
-                     query_command = "host")
+                                       source = source_connector)
+        query.output(
+            config = config,
+            query_result = host_query_result,
+            output_format = output,
+            raw = raw
+        )
         
     except NotImplementedError:
         err_console.print("This data source does not exist. Use this command with \"--help\" for more information.")
@@ -65,7 +63,6 @@ def query_generic(service:str,
                   search: str,
                   raw : Annotated[bool, typer.Option()]=False,
                   output: Annotated[str, typer.Option()] = "cli",
-                  refine: Annotated[bool, typer.Option()]=False,
                   config_path: Annotated[str, typer.Option(envvar="PIVOTTRACK_CONFIG")] = None):
     if(raw and output == "cli"):
         err_console.print("This combination does not work. CLI output does only work with normalized data handling.")
@@ -74,14 +71,13 @@ def query_generic(service:str,
     config = init_application(config_path)
     source_connector = utils.find_connector_class(HostQuery, name=service)
     try:
-        generic_query_result = query.host_search(config = config, search = search, source = source_connector, raw=raw, refine=refine)
-        query.output(config = config,
-                     query_result = generic_query_result,
-                     output_format=output,
-                     query = search,
-                     raw = raw,
-                     service = service,
-                     query_command = "generic")
+        generic_query_result = query.host_search(config = config, search = search, source = source_connector)
+        query.output(
+            config = config,
+            query_result = generic_query_result,
+            output_format=output,
+            raw=raw
+        )
     
     except NotImplementedError:
         err_console.print("This data source does not exist. Use this command with \"--help\" for more information.")

@@ -1,7 +1,6 @@
 import logging
 
-from .connectors import HostQuery, ShodanSourceConnector, CensysSourceConnector, SourceConnector, OpenSearchConnector
-from . import printer
+from .connectors import HostQuery, ShodanSourceConnector, CensysSourceConnector, SourceConnector, OpenSearchConnector, CLIPrinter, JSONPrinter
 from common_osint_model import Host, BaseModel
 
 logger = logging.getLogger(__name__)
@@ -70,22 +69,27 @@ def host(config:dict, host:str, source:HostQuery) -> QueryResult:
     return QueryResult(connection.query_host(host), query_command = "host", search_term=host)
   
 
-def host_search(config:dict, search:str, source:HostQuery) -> QueryResult:
+def host_query(config:dict, search:str, source:HostQuery, expand=False) -> QueryResult | tuple[QueryResult, QueryResult]:
     logger.info(f"Search for \"{search}\" with service {source.__name__}.")
     
     if source == None:
         logger.warn(f"Did not find connector for service {service}. Raising NotImplementedError Exception.")
         raise NotImplementedError
     connection = source(config['connectors'][source.__name__.lower().removesuffix("sourceconnector")])
-    return QueryResult(connection.query_host_search(search), query_command="generic", search_term=search)
+    query_result = QueryResult(connection.query_host_search(search), query_command="generic", search_term=search)
+    if not expand:
+        return (query_result, None)
+    else:
+        com_elements = query_result.com_result if query_result.is_collection else [query_result.com_result]
+        return (query_result, [host(config = config, host=com_element.ip, source = source) for com_element in com_elements])
 
-# TODO: Move output to somewhere else
+
 def output(config:dict, query_result:QueryResult, output_format:str = "cli", raw = False):
     if output_format == "cli":
-        printer.com_host_table(query_result.com_result)
+        CLIPrinter().query_output(query_result)
     
     if output_format == "json":
-        printer.json(query_result.com_result) if not raw else printer.json(query_result.raw_result)
+        JSONPrinter().query_output(query_result, raw = raw)
 
     if output_format == "opensearch":
         OpenSearchConnector(config['connectors']['opensearch']).query_output(query_result=query_result, raw=raw)

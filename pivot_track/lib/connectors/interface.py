@@ -46,5 +46,22 @@ class HostQuery(ABC):
 
 class OutputConnector(ABC):
     @abstractmethod
-    def query_output(self, query_result = None, raw=False):
+    def query_output(self, query_result, raw=False):
         raise NotImplementedError
+
+    @abstractmethod
+    def query_result_to_com_list(self, query_result) -> list:
+        result = list()
+        if type(query_result) == list:
+            logger.debug(f"List of QueryResult elements identified. Length is {len(query_result)}")
+            
+            for query_result_element in query_result:
+                print(type(result))
+                if query_result_element.is_collection:
+                    logger.debug("query_result_element is collection.")
+                    result.extend(query_result_element.com_result)
+                else:
+                    result.append(query_result_element.com_result)
+        else:
+            result = query_result.com_result if query_result.is_collection else [query_result.com_result]
+        return result

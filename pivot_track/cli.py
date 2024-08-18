@@ -62,8 +62,10 @@ def query_host(service:str,
 def query_generic(service:str,
                   search: str,
                   raw : Annotated[bool, typer.Option()]=False,
+                  expand : Annotated[bool, typer.Option()]=True,
                   output: Annotated[str, typer.Option()] = "cli",
-                  config_path: Annotated[str, typer.Option(envvar="PIVOTTRACK_CONFIG")] = None):
+                  config_path: Annotated[str, typer.Option(envvar="PIVOTTRACK_CONFIG")] = None
+                  ):
     if(raw and output == "cli"):
         err_console.print("This combination does not work. CLI output does only work with normalized data handling.")
         exit(-1)
@@ -71,13 +73,21 @@ def query_generic(service:str,
     config = init_application(config_path)
     source_connector = utils.find_connector_class(HostQuery, name=service)
     try:
-        generic_query_result = query.host_search(config = config, search = search, source = source_connector)
-        query.output(
-            config = config,
-            query_result = generic_query_result,
-            output_format=output,
-            raw=raw
-        )
+        generic_query_result, expanded_query_result = query.host_query(config = config, search = search, source = source_connector, expand=expand)
+        if not expand:
+            query.output(
+                config = config,
+                query_result = generic_query_result,
+                output_format=output,
+                raw=raw
+            )
+        else:
+            query.output(
+                config = config,
+                query_result = expanded_query_result,
+                output_format=output,
+                raw = raw
+            )
     
     except NotImplementedError:
         err_console.print("This data source does not exist. Use this command with \"--help\" for more information.")

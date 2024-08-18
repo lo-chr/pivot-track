@@ -30,31 +30,29 @@ class Tracking:
     def track_source(source:SourceConnector = None, definitions:list = None, config:dict = None):
         logger.info(f"Start tracking {len(definitions)} definition(s) in source \"{source.__name__}\"")
         
-        # TODO: Right now this is inconsistent, switch to "stringless" invocation of query (give SourceConnector object)
-        source_string = source.__name__.lower().removesuffix("sourceconnector")        
+        source_string = source.__name__.lower().removesuffix("sourceconnector")
         for definition in definitions:
             logger.info(f"Start tracking with source \"{source.__name__}\" for definition \"{definition['uuid']}\".")
-            for host_search in definition['query']['source'][source_string]['host_search']:
-                query_result = query.host_search(
+            for host_search in definition['query']['source'][source_string]['host_generic']:
+                query_result, expanded_query_result = query.host_query(
                     config = config,
-                    search=host_search,
-                    source = source
+                    search = host_search,
+                    source = source,
+                    expand = definition['query']['source'][source_string]['expand']
                 )
-                if not definition['query']['settings']['refine']:
+                if not definition['query']['source'][source_string]['expand']:
                     query.output(
                         config = config,
                         query_result = query_result,
                         output_format=definition['output'],
                     ) 
                 else:
-                    com_elements = query_result.com_result if query_result.is_collection else [query_result.com_result]
-                    for com_element in com_elements:
-                        result = query.host(config = config, host = com_element.ip, source = source)
-                        query.output(
-                            config = config,
-                            query_result = result,
-                            output_format=definition['output'],
-                        )
+                    logger.debug(f"Length of expanded query result is {len(expanded_query_result)}.")
+                    query.output(
+                        config = config,
+                        query_result = expanded_query_result,
+                        output_format=definition['output'],
+                    )
     
     def load_definitions(tracking_definition_path:Path = None) -> tuple[list, dict]:
         if tracking_definition_path == None or not tracking_definition_path.exists():

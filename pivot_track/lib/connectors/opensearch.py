@@ -60,38 +60,50 @@ class OpenSearchConnector(OutputConnector):
             logger.info(f"Opensearch index {index_name} did already exist.")
             return None
     
-    def index_query_result(self, query:str, query_result:dict, index:str):
-        index = f"{self.config['index_prefix']}{index}"
-        query_result['pivottrack'] = {
-            "query_timestamp" : datetime.now(timezone.utc).isoformat(),
-            "query_string": query
-        }
-
-        logger.info(f"Write a query result for query {query} to index {index} and force refresh.")
+    def index_document(self, document:dict, index:str):
         try:
-            response = self.opensearch_client.index(index = index, body = query_result, refresh=True)
-            logger.debug(f"Indexing of query result for query {query} to index {index} successful.")
+            response = self.opensearch_client.index(index = index, body = document, refresh=True)
+            logger.debug(f"Indexing of document to index {index} successful.")
             return response
         except OpenSearchException as e:
-            logger.error(f"OpenSearchException while indexing query {query} results to index {index}. Message: {e}")
+            logger.error(f"OpenSearchException while indexing document for {index}.")
+            logger.debug(f"OpenSearchException message: {e}")
             return None
     
     def query_output(self, query_result, raw=False):
-        service = query_result.source.__name__.lower().removesuffix("sourceconnector")
-        if raw:
-            query_result_payload = query_result.raw_result
-            if type(query_result_payload) == list and len(query_result_payload) > 1:
-                query_result_payload = {
-                    'result': query_result_payload
-                }
-            elif type(query_result_payload) == list and len(query_result_payload) == 1:
-                query_result_payload = query_result_payload[0]
-            self.index_query_result(query = query_result.search_term, query_result = query_result_payload, index = f"{service}-{query_result.query_command}-raw")
-        else:
-            com_results = query_result.com_result
-            if isinstance(com_results, Host):
-                com_results = [com_results]
-            for element in com_results:
-                # TODO this is a little hacky right now, but otherwise it's hard to get this data into opensearch...
-                element.services = []
-                self.index_query_result(query = query_result.search_term, query_result = element.flattened_dict, index = f"com-{query_result.query_command}")
+        if not type(query_result) == list: query_result = [query_result]
+        print(type(query_result))
+        
+        for query_result_element in query_result:
+            pivottrack_metadata = {
+                "query_timestamp" : datetime.now(timezone.utc).isoformat(),
+                "query_string": query_result_element.search_term
+            }
+
+            if raw:
+                query_result_payload = query_result_element.raw_result
+                if type(query_result_payload) == list and len(query_result_payload) > 1:
+                    query_result_payload = {
+                        'result': query_result_payload
+                    }
+                elif type(query_result_payload) == list and len(query_result_payload) == 1:
+                    query_result_payload = query_result_payload[0]
+
+                source = query_result_element.source.__name__.lower().removesuffix("sourceconnector")
+                index_name = f"{self.config['index_prefix']}{source}-{query_result_element.query_command}-raw"
+                query_result_payload['pivottrack'] = pivottrack_metadata
+
+                logger.info(f"Write a query result for query {query_result_element.search_term} to index {index_name}.")
+
+                self.index_document(document = query_result_payload, index = index_name)
+            else:
+                com_list = self.query_result_to_com_list(query_result_element)
+                for com_result_element in com_list:
+                    # TODO this is a little hacky right now, but otherwise it's hard to get this data into opensearch...
+                    com_result_element.services = []
+                    index_name = f"{self.config['index_prefix']}com-{query_result_element.query_command}"
+                    self.index_document(document = com_result_element.flattened_dict, index = index_name)
+    
+    def query_result_to_com_list(self, query_result) -> list:
+        logger.debug("Call \"_query_result_to_com_list\" in parent class")
+        return super().query_result_to_com_list(query_result)

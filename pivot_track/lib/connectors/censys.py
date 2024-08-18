@@ -80,9 +80,9 @@ class CensysSourceConnector(SourceConnector, HostQuery):
             return None
     
     def _api_throttle(self):
-        logger.debug("Call \"_api_throttle()\" in parent class}")
+        logger.debug("Call \"_api_throttle()\" in parent class")
         super()._api_throttle()
     
     def _update_last_call(self):
-        logger.debug("Call \"_update_last_call()\" in parent class}")
+        logger.debug("Call \"_update_last_call()\" in parent class")
         super()._update_last_call()

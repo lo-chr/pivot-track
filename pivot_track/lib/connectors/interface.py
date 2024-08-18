@@ -56,7 +56,6 @@ class OutputConnector(ABC):
             logger.debug(f"List of QueryResult elements identified. Length is {len(query_result)}")
             
             for query_result_element in query_result:
-                print(type(result))
                 if query_result_element.is_collection:
                     logger.debug("query_result_element is collection.")
                     result.extend(query_result_element.com_result)

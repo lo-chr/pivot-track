@@ -72,7 +72,6 @@ class OpenSearchConnector(OutputConnector):
     
     def query_output(self, query_result, raw=False):
         if not type(query_result) == list: query_result = [query_result]
-        print(type(query_result))
         
         for query_result_element in query_result:
             pivottrack_metadata = {
@@ -132,6 +131,36 @@ class OpenSearchConnector(OutputConnector):
             tracking_result_payload['pt_meta'] = pivottrack_metadata
             tracking_result_payload['pt_tracking_definition'] = pivottrack_tracking_definition
             index_name = f"{self.config['index_prefix']}tracking-hosts"
-
             self.index_document(document = tracking_result_payload, index = index_name)
-
+    
+    def tracking_check_if_known(self, tracked_item, definition):
+        # TODO Check for types (Host, etc.)
+        index_name = f"{self.config['index_prefix']}tracking-hosts"
+        try:
+            body = {
+                "query" : {
+                    "bool" : {
+                        "filter": [{
+                            "match": {
+                                "pt_tracking_definition.uuid": definition['uuid']
+                            }
+                        },{ 
+                            "match": {
+                                "ip": tracked_item.ip
+                            } 
+                        }]
+                    }
+                }
+            }
+            response = self.opensearch_client.search(body=body, index=index_name, params={'size' : 1})
+            logger.info(f"Searching {index_name} successful finished successful with {response['hits']['total']} results.")
+            if response['hits']['total']['value'] > 0:
+                logger.debug(f"Host with IP {tracked_item.ip} exists in Opensearch Database. Returning True.")
+                return True
+            else:
+                logger.debug(f"Host with IP {tracked_item.ip} does not exist in Opensearch Database. Returning False.")
+                return False
+        except OpenSearchException as e:
+            logger.error(f"OpenSearchException while searching for host with {tracked_item.ip} document in {index_name}.")
+            logger.debug(f"OpenSearchException message: {e}")
+            return False

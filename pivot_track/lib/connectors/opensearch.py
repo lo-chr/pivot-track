@@ -4,7 +4,7 @@ from common_osint_model import Host
 
 from .interface import OutputConnector
 
-import logging
+import logging, uuid
 
 logger = logging.getLogger(__name__)
 
@@ -101,9 +101,37 @@ class OpenSearchConnector(OutputConnector):
                 for com_result_element in com_list:
                     # TODO this is a little hacky right now, but otherwise it's hard to get this data into opensearch...
                     com_result_element.services = []
+                    query_result_payload = com_result_element.flattened_dict
+                    query_result_payload['pivottrack'] = pivottrack_metadata
                     index_name = f"{self.config['index_prefix']}com-{query_result_element.query_command}"
-                    self.index_document(document = com_result_element.flattened_dict, index = index_name)
+                    self.index_document(document = query_result_payload, index = index_name)
     
     def query_result_to_com_list(self, query_result) -> list:
         logger.debug("Call \"_query_result_to_com_list\" in parent class")
         return super().query_result_to_com_list(query_result)
+    
+    def tracking_output(self, query_result, definition:dict):
+        pivottrack_metadata = {
+            "tracking_timestamp" : datetime.now(timezone.utc).isoformat(),
+            "tracking_reference" : str(uuid.uuid4())
+        }
+        pivottrack_tracking_definition = {
+            "title" : definition['title'],
+            "uuid" : definition['uuid'],
+            "status" : definition['status'],
+            "date" : definition['date'],
+            "modified" : definition['modified'],
+            "tags" : definition['tags']
+        }
+        
+        com_list = self.query_result_to_com_list(query_result)
+        for com_result_element in com_list:
+            # TODO this is a little hacky right now, but otherwise it's hard to get this data into opensearch...
+            com_result_element.services = []
+            tracking_result_payload = com_result_element.flattened_dict
+            tracking_result_payload['pt_meta'] = pivottrack_metadata
+            tracking_result_payload['pt_tracking_definition'] = pivottrack_tracking_definition
+            index_name = f"{self.config['index_prefix']}tracking-hosts"
+
+            self.index_document(document = tracking_result_payload, index = index_name)
+

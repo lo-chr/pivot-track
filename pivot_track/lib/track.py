@@ -2,7 +2,7 @@ import logging, yaml, time
 from pathlib import Path
 
 from . import query, utils
-from .connectors.interface import SourceConnector
+from .connectors import SourceConnector, OpenSearchConnector
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +33,8 @@ class Tracking:
         source_string = source.__name__.lower().removesuffix("sourceconnector")
         for definition in definitions:
             logger.info(f"Start tracking with source \"{source.__name__}\" for definition \"{definition['uuid']}\".")
+
+            collected_results = list()
             for host_search in definition['query']['source'][source_string]['host_generic']:
                 query_result, expanded_query_result = query.host_query(
                     config = config,
@@ -41,6 +43,7 @@ class Tracking:
                     expand = definition['query']['source'][source_string]['expand']
                 )
                 if not definition['query']['source'][source_string]['expand']:
+                    collected_results.extend(query_result)
                     query.output(
                         config = config,
                         query_result = query_result,
@@ -48,11 +51,13 @@ class Tracking:
                     ) 
                 else:
                     logger.debug(f"Length of expanded query result is {len(expanded_query_result)}.")
+                    collected_results.extend(expanded_query_result)
                     query.output(
                         config = config,
                         query_result = expanded_query_result,
                         output_format=definition['output'],
                     )
+            OpenSearchConnector(config['connectors']['opensearch']).tracking_output(query_result=collected_results, definition=definition)
     
     def load_definitions(tracking_definition_path:Path = None) -> tuple[list, dict]:
         if tracking_definition_path == None or not tracking_definition_path.exists():

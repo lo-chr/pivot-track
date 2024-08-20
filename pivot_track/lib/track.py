@@ -6,6 +6,8 @@ from .connectors import SourceConnector, OpenSearchConnector
 
 logger = logging.getLogger(__name__)
 
+from common_osint_model import Domain, Host
+
 class Tracking:
     def execute_tracker(
             config:dict = None,
@@ -57,7 +59,13 @@ class Tracking:
                         query_result = expanded_query_result,
                         output_format=definition['output'],
                     )
-            OpenSearchConnector(config['connectors']['opensearch']).tracking_output(query_result=collected_results, definition=definition)
+            new_items = OpenSearchConnector(config['connectors']['opensearch']).tracking_output(query_result=collected_results, definition=definition)
+            logger.debug(f"Got {len(new_items)} for last run of  \"{definition['uuid']}\".")
+            if len(new_items) > 0:
+                logger.info(f"Appending notification for {len(new_items)} items.")
+                notification = f"🚨🚨🚨 Tracking Results for \"{definition['title']}\" ({definition['uuid']}) on {source_string.capitalize()}:\n{'\n'.join([notify_string for notify_string in Tracking.create_notify_strings(new_items)])}"
+                Tracking.notify_for_new_elements(notification, config)
+                
     
     def load_definitions(tracking_definition_path:Path = None) -> tuple[list, dict]:
         if tracking_definition_path == None or not tracking_definition_path.exists():
@@ -85,3 +93,17 @@ class Tracking:
                     logger.debug(f"Added rule \"{definition['uuid']}\" for source {source}.")
         
         return loaded_definitions, loaded_definition_by_source
+    
+    def create_notify_strings(new_elements:list):
+        notify_strings = list()
+        for element in new_elements:
+            if isinstance(element, Host):
+                notify_strings.append(element.ip)
+            elif isinstance(element, Domain):
+                notify_strings.append(element.domain)
+        return notify_strings
+    
+    def notify_for_new_elements(notification:str, config:dict):
+        tracking_file_path = Path(config['tracking_file'])
+        with open(tracking_file_path, 'a') as out_file:
+            out_file.write(f"{notification}\n\n")

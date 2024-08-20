@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
 from opensearchpy import OpenSearch, OpenSearchException
-from common_osint_model import Host
+from common_osint_model import Host, Domain
 
 from .interface import OutputConnector
 
-import logging, uuid
+import logging, uuid, json
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +110,7 @@ class OpenSearchConnector(OutputConnector):
         return super().query_result_to_com_list(query_result)
     
     def tracking_output(self, query_result, definition:dict):
+        new_elements = []
         pivottrack_metadata = {
             "tracking_timestamp" : datetime.now(timezone.utc).isoformat(),
             "tracking_reference" : str(uuid.uuid4())
@@ -131,12 +132,18 @@ class OpenSearchConnector(OutputConnector):
             tracking_result_payload['pt_meta'] = pivottrack_metadata
             tracking_result_payload['pt_tracking_definition'] = pivottrack_tracking_definition
             index_name = f"{self.config['index_prefix']}tracking-hosts"
+            
+            new_elements.extend(self.tracking_get_new_elements(com_result_element, definition))
             self.index_document(document = tracking_result_payload, index = index_name)
+        return new_elements
+            
     
-    def tracking_check_if_known(self, tracked_item, definition):
+    def tracking_get_new_elements(self, tracked_item, definition):
         # TODO Check for types (Host, etc.)
+        new_elements = []
         index_name = f"{self.config['index_prefix']}tracking-hosts"
-        try:
+        if isinstance(tracked_item, Host):
+            logger.debug(f"Tracked item is Host, searching for IP {tracked_item.ip} and definition UUID.")
             body = {
                 "query" : {
                     "bool" : {
@@ -152,15 +159,36 @@ class OpenSearchConnector(OutputConnector):
                     }
                 }
             }
+            for domain in tracked_item.domains:
+                new_elements.extend(self.tracking_get_new_elements(domain, definition))
+        elif isinstance(tracked_item, Domain):
+            logger.debug(f"Tracked item is Domain, searching for IP {tracked_item.domain} and definition UUID.")
+            body = {
+                "query" : {
+                    "bool" : {
+                        "filter": [{
+                            "match": {
+                                "pt_tracking_definition.uuid": definition['uuid']
+                            }
+                        },{ 
+                            "match": {
+                                "domains.domain": tracked_item.domain
+                            } 
+                        }]
+                    }
+                }
+            }
+        try:    
             response = self.opensearch_client.search(body=body, index=index_name, params={'size' : 1})
             logger.info(f"Searching {index_name} successful finished successful with {response['hits']['total']} results.")
             if response['hits']['total']['value'] > 0:
-                logger.debug(f"Host with IP {tracked_item.ip} exists in Opensearch Database. Returning True.")
-                return True
+                logger.debug(f"Tracked item exists in Opensearch Database.")
+                return new_elements
             else:
-                logger.debug(f"Host with IP {tracked_item.ip} does not exist in Opensearch Database. Returning False.")
-                return False
+                logger.debug(f"Tracked item does not exist in Opensearch Database.")
+                new_elements.append(tracked_item)
+                return new_elements
         except OpenSearchException as e:
-            logger.error(f"OpenSearchException while searching for host with {tracked_item.ip} document in {index_name}.")
+            logger.error(f"OpenSearchException while searching tracked item document in {index_name}.")
             logger.debug(f"OpenSearchException message: {e}")
             return False

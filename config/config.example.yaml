@@ -3,6 +3,7 @@
 logging:
   level: "INFO"
   logfile: "pivottrack.log"   # Can also be full path
+tracking_file: "findings.txt"
 # Configuration of connectors
 connectors:
   # Find your Shodan API key on https://account.shodan.io

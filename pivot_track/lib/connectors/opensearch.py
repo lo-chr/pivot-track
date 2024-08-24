@@ -11,12 +11,13 @@ logger = logging.getLogger(__name__)
 class OpenSearchConnector(OutputConnector):
     opensearch_client = None
     config = None
+    available = False
 
     def __init__(self, config):
-        logger.info(f"Initializing OpenSearchConnector for connection {config['host']}:{config['port']}")
-        
-        self.config = config
         try:
+            logger.info(f"Initializing OpenSearchConnector for connection {config['host']}:{config['port']}")
+        
+            self.config = config
             self.opensearch_client = OpenSearch(
                 hosts = [{
                     'host' : self.config['host'],
@@ -28,11 +29,14 @@ class OpenSearchConnector(OutputConnector):
                 http_auth = (self.config['user'], self.config['pass'])
             )
             self.opensearch_client.ping()
+            # Make sure, that there is some kind of index prefix, at least an empty string
+            if(self.config['index_prefix'] == None):
+                self.config['index_prefix'] = ''
+            self.available = True
+        except KeyError as e:
+            logger.error(f"Could not initialize OpenSearchConnector with wrong configuration.")
         except OpenSearchException as e:
             logger.error(f"Failed connecting to OpenSearch instance running on {self.config['host']}:{self.config['port']}. User was {self.config['user']}. OpenSearchException message: {e}")
-        # Make sure, that there is some kind of index prefix, at least an empty string
-        if(self.config['index_prefix'] == None):
-            self.config['index_prefix'] = ''
 
     # TODO Create function for index settings (i.E. max_docvalue_fields_search)
     def init_pivottrack_query_index(self, index_name:str, index_field_properties:dict = None):

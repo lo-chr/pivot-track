@@ -3,7 +3,7 @@ from pathlib import Path
 import yaml
 
 
-def load_config(path:str = None):
+def load_config(path:Path = None):
     if(path == None):
         path = str(Path.home() / '.pivottrack' / 'config.yaml')
     

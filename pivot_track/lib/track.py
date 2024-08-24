@@ -9,11 +9,16 @@ logger = logging.getLogger(__name__)
 from common_osint_model import Domain, Host
 
 class Tracking:
+    """The `Tracking` class is responsbile for the tracking feature within Pivot Track. Tracking means,
+    the automatic execution and storing of queries against several sources, storing the results
+    and providing notifications for newly found items. """
     def execute_tracker(
             config:dict = None,
             tracking_definition_path:Path = None,
             interval:int = 600
         ):
+        """This function is responsbile for executing searches defined by a set of tracking definitions.
+        It retries the searches after a given period of time."""
         if config == None:
             logger.error("No configuration set. Raising AttributeError.")
             raise AttributeError("No configuration set.")
@@ -30,6 +35,7 @@ class Tracking:
             time.sleep(interval)
 
     def track_source(source:SourceConnector = None, definitions:list = None, config:dict = None):
+        """The function executes all queries for one source (i.E. Shodan or Censys)."""
         logger.info(f"Start tracking {len(definitions)} definition(s) in source \"{source.__name__}\"")
         
         source_string = source.__name__.lower().removesuffix("sourceconnector")
@@ -68,6 +74,10 @@ class Tracking:
                 
     
     def load_definitions(tracking_definition_path:Path = None) -> tuple[list, dict]:
+        """This function is responsible for loading all tracking definitions at a given path.
+        It returns a tuple, containing a list with all loaded definitinons. Additionally it
+        returns a dictionary where the key is a given data source and the value the tracking
+        definition."""
         if tracking_definition_path == None or not tracking_definition_path.exists():
             logger.error("Could not load tracking definitions. Raising AttributeError.")
             raise AttributeError("Could not load tracking definitions.")
@@ -94,7 +104,8 @@ class Tracking:
         
         return loaded_definitions, loaded_definition_by_source
     
-    def create_notify_strings(new_elements:list):
+    def create_notify_strings(new_elements:list) -> list:
+        """This function transfers a set of Common OSINT Model items to a list of identifiable strings (hostnames and IPs for now)."""
         notify_strings = list()
         for element in new_elements:
             if isinstance(element, Host):
@@ -104,6 +115,7 @@ class Tracking:
         return notify_strings
     
     def notify_for_new_elements(notification:str, config:dict):
+        """This function handles the notification for new events. For now it just stores them in a given file."""
         tracking_file_path = Path(config['tracking_file'])
         try:
             with open(tracking_file_path, 'a') as out_file:

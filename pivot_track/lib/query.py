@@ -59,37 +59,38 @@ class QueryResult:
         elif not self.is_collection:
             return 1        # Case for only one element (no collection)
 
-def host(config:dict, host:str, source:HostQuery) -> QueryResult:
-    logger.info(f"Query for \"{host}\" with service {source.__name__}.")
+class Querying:
+    def host(config:dict, host:str, source:HostQuery) -> QueryResult:
+        logger.info(f"Query for \"{host}\" with service {source.__name__}.")
+        
+        if source == None:
+            logger.warn(f"Did not find connector for service {service}. Raising NotImplementedError Exception.")
+            raise NotImplementedError
+        connection = source(config['connectors'][source.__name__.lower().removesuffix("sourceconnector")])
+        return QueryResult(connection.query_host(host), query_command = "host", search_term=host)
     
-    if source == None:
-        logger.warn(f"Did not find connector for service {service}. Raising NotImplementedError Exception.")
-        raise NotImplementedError
-    connection = source(config['connectors'][source.__name__.lower().removesuffix("sourceconnector")])
-    return QueryResult(connection.query_host(host), query_command = "host", search_term=host)
-  
 
-def host_query(config:dict, search:str, source:HostQuery, expand=False) -> QueryResult | tuple[QueryResult, QueryResult]:
-    logger.info(f"Search for \"{search}\" with service {source.__name__}.")
-    
-    if source == None:
-        logger.warn(f"Did not find connector for service {service}. Raising NotImplementedError Exception.")
-        raise NotImplementedError
-    connection = source(config['connectors'][source.__name__.lower().removesuffix("sourceconnector")])
-    query_result = QueryResult(connection.query_host_search(search), query_command="generic", search_term=search)
-    if not expand:
-        return (query_result, None)
-    else:
-        com_elements = query_result.com_result if query_result.is_collection else [query_result.com_result]
-        return (query_result, [host(config = config, host=com_element.ip, source = source) for com_element in com_elements])
+    def host_query(config:dict, search:str, source:HostQuery, expand=False) -> QueryResult | tuple[QueryResult, QueryResult]:
+        logger.info(f"Search for \"{search}\" with service {source.__name__}.")
+        
+        if source == None:
+            logger.warn(f"Did not find connector for service {service}. Raising NotImplementedError Exception.")
+            raise NotImplementedError
+        connection = source(config['connectors'][source.__name__.lower().removesuffix("sourceconnector")])
+        query_result = QueryResult(connection.query_host_search(search), query_command="generic", search_term=search)
+        if not expand:
+            return (query_result, None)
+        else:
+            com_elements = query_result.com_result if query_result.is_collection else [query_result.com_result]
+            return (query_result, [Querying.host(config = config, host=com_element.ip, source = source) for com_element in com_elements])
 
 
-def output(config:dict, query_result:QueryResult, output_format:str = "cli", raw = False):
-    if output_format == "cli":
-        CLIPrinter().query_output(query_result)
-    
-    if output_format == "json":
-        JSONPrinter().query_output(query_result, raw = raw)
+    def output(config:dict, query_result:QueryResult, output_format:str = "cli", raw = False):
+        if output_format == "cli":
+            CLIPrinter().query_output(query_result)
+        
+        if output_format == "json":
+            JSONPrinter().query_output(query_result, raw = raw)
 
-    if output_format == "opensearch":
-        OpenSearchConnector(config['connectors']['opensearch']).query_output(query_result=query_result, raw=raw)
+        if output_format == "opensearch":
+            OpenSearchConnector(config['connectors']['opensearch']).query_output(query_result=query_result, raw=raw)

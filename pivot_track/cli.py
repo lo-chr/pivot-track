@@ -17,12 +17,15 @@ def init_application(config_path:Path = None):
 
     # We have to reset logging
     logging.root.handlers = []
+
+    basic_config_handlers = [logging.StreamHandler()]
+
+    logfilepath = Path(config['logging']['logfile'])
+    if logfilepath.exists():
+        basic_config_handlers.append(logfilepath)
     logging.basicConfig(
         level=config['logging']['level'],
-        handlers=[
-            logging.FileHandler(Path(config['logging']['logfile'])),
-            logging.StreamHandler()
-        ],
+        handlers=basic_config_handlers,
         format='%(asctime)s %(name)s %(levelname)s %(message)s'
     )
 
@@ -53,10 +56,10 @@ def query_host(service:str,
     config = init_application(Path(config_path))
     source_connector = utils.find_connector_class(HostQuery, name=service)
     try:  
-        host_query_result = query.host(config = config,
+        host_query_result = query.Querying.host(config = config,
                                        host = host,
                                        source = source_connector)
-        query.output(
+        query.Querying.output(
             config = config,
             query_result = host_query_result,
             output_format = output,

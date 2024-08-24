@@ -2,3 +2,4 @@
 examples/*
 dev/*
 *.log
+.env

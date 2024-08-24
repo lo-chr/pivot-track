@@ -191,4 +191,4 @@ class OpenSearchConnector(OutputConnector):
         except OpenSearchException as e:
             logger.error(f"OpenSearchException while searching tracked item document in {index_name}.")
             logger.debug(f"OpenSearchException message: {e}")
-            return False
+            return new_elements

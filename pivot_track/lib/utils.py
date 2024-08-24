@@ -5,13 +5,18 @@ import yaml
 
 def load_config(path:Path = None) -> dict:
     """This function is loads the configuration from a file and returns it."""
-    if(path == None):
-        path = str(Path.home() / '.pivottrack' / 'config.yaml')
+    if type(path) == str:
+        raise AttributeError("Pivot Track configuration path only allows Path objects.")
     
-    # TODO Implement testing for correct path
+    if path == None or not path.exists():
+        raise FileNotFoundError
+
     with open(path, 'r') as config_file:
-        config = yaml.safe_load(config_file)
-    return config
+        try:
+            config = yaml.safe_load(config_file)
+            return config
+        except yaml.YAMLError:
+            return None
 
 # TODO Rename in find_connector_class_by_name
 def find_connector_class(parent_class, name:str):

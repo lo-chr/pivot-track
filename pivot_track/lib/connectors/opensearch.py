@@ -27,6 +27,7 @@ class OpenSearchConnector(OutputConnector):
                 verify_certs = self.config['verify_certs'],
                 http_auth = (self.config['user'], self.config['pass'])
             )
+            self.opensearch_client.ping()
         except OpenSearchException as e:
             logger.error(f"Failed connecting to OpenSearch instance running on {self.config['host']}:{self.config['port']}. User was {self.config['user']}. OpenSearchException message: {e}")
         # Make sure, that there is some kind of index prefix, at least an empty string

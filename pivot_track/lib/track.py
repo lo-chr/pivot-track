@@ -105,5 +105,8 @@ class Tracking:
     
     def notify_for_new_elements(notification:str, config:dict):
         tracking_file_path = Path(config['tracking_file'])
-        with open(tracking_file_path, 'a') as out_file:
-            out_file.write(f"{notification}\n\n")
+        try:
+            with open(tracking_file_path, 'a') as out_file:
+                out_file.write(f"{notification}\n\n")
+        except FileNotFoundError as e:
+            logger.error(f"Could not find notification output: {tracking_file_path.absolute().as_posix()}")

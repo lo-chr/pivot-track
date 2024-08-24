@@ -12,8 +12,7 @@ class SourceConnector(ABC):
 
     @abstractmethod
     def _api_throttle(self):
-        '''Throttle API consumption'''
-
+        '''Function to throttle API consumption (through waiting).'''
         logger.debug("Throttle API consumption.")
         # Get current timestamp
         current_timestamp = int(round(datetime.now().timestamp()) * 1000)
@@ -30,21 +29,26 @@ class SourceConnector(ABC):
     
     @abstractmethod
     def _update_last_call(self):
-        '''Update last_call var for API consumption throttling'''
+        '''Function for updating last_call variable for API consumption throttling.'''
 
         logger.debug("Update last_call timestamp for API consumption throttling")
         self.last_call = int(round(datetime.now().timestamp()) * 1000)
 
 class HostQuery(ABC):
+    """This class represents a interface for requesting host information at a source."""
     @abstractmethod
     def query_host_search(self, query:str):
+        """Abstract function for performing a query for a host search."""
         raise NotImplementedError
     
     @abstractmethod
     def query_host(self, host:str):
+        """Abstract function for performing a query for a specific host."""
         raise NotImplementedError
 
 class OutputConnector(ABC):
+    """This class represents a parent class for implementing certain types of outputs.
+    It is optimized for printing (or storing) data, based on Query results."""
     @abstractmethod
     def query_output(self, query_result, raw=False):
         raise NotImplementedError

@@ -109,6 +109,7 @@ class OpenSearchConnector(OutputConnector):
         logger.debug("Call \"_query_result_to_com_list\" in parent class")
         return super().query_result_to_com_list(query_result)
     
+    # TODO: Add tracking output interface
     def tracking_output(self, query_result, definition:dict):
         new_elements = []
         pivottrack_metadata = {

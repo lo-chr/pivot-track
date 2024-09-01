@@ -46,7 +46,7 @@ class Tracking:
 
                 collected_results = list()
                 for host_search in definition['query']['source'][source_string]['host_generic']:
-                    query_result, expanded_query_result = query.host_query(
+                    query_result, expanded_query_result = query.Querying.host_query(
                         config = config,
                         search = host_search,
                         source = source,
@@ -54,7 +54,7 @@ class Tracking:
                     )
                     if not definition['query']['source'][source_string]['expand']:
                         collected_results.extend(query_result)
-                        query.output(
+                        query.Querying.output(
                             config = config,
                             query_result = query_result,
                             output_format=definition['output'],
@@ -62,7 +62,7 @@ class Tracking:
                     else:
                         logger.debug(f"Length of expanded query result is {len(expanded_query_result)}.")
                         collected_results.extend(expanded_query_result)
-                        query.output(
+                        query.Querying.output(
                             config = config,
                             query_result = expanded_query_result,
                             output_format=definition['output'],

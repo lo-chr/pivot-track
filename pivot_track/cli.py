@@ -22,7 +22,7 @@ def init_application(config_path:Path = None):
 
     logfilepath = Path(config['logging']['logfile'])
     if logfilepath.exists():
-        basic_config_handlers.append(logfilepath)
+        basic_config_handlers.append(logging.FileHandler(logfilepath))
     logging.basicConfig(
         level=config['logging']['level'],
         handlers=basic_config_handlers,

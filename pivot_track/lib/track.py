@@ -36,41 +36,47 @@ class Tracking:
 
     def track_source(source:SourceConnector = None, definitions:list = None, config:dict = None):
         """The function executes all queries for one source (i.E. Shodan or Censys)."""
-        logger.info(f"Start tracking {len(definitions)} definition(s) in source \"{source.__name__}\"")
-        
-        source_string = source.__name__.lower().removesuffix("sourceconnector")
-        for definition in definitions:
-            logger.info(f"Start tracking with source \"{source.__name__}\" for definition \"{definition['uuid']}\".")
+        opensearch_connector = OpenSearchConnector(config['connectors']['opensearch'])
+        if opensearch_connector.available:
+            logger.info(f"Start tracking {len(definitions)} definition(s) in source \"{source.__name__}\"")
+            
+            source_string = source.__name__.lower().removesuffix("sourceconnector")
+            for definition in definitions:
+                logger.info(f"Start tracking with source \"{source.__name__}\" for definition \"{definition['uuid']}\".")
 
-            collected_results = list()
-            for host_search in definition['query']['source'][source_string]['host_generic']:
-                query_result, expanded_query_result = query.host_query(
-                    config = config,
-                    search = host_search,
-                    source = source,
-                    expand = definition['query']['source'][source_string]['expand']
-                )
-                if not definition['query']['source'][source_string]['expand']:
-                    collected_results.extend(query_result)
-                    query.output(
+                collected_results = list()
+                for host_search in definition['query']['source'][source_string]['host_generic']:
+                    query_result, expanded_query_result = query.host_query(
                         config = config,
-                        query_result = query_result,
-                        output_format=definition['output'],
-                    ) 
-                else:
-                    logger.debug(f"Length of expanded query result is {len(expanded_query_result)}.")
-                    collected_results.extend(expanded_query_result)
-                    query.output(
-                        config = config,
-                        query_result = expanded_query_result,
-                        output_format=definition['output'],
+                        search = host_search,
+                        source = source,
+                        expand = definition['query']['source'][source_string]['expand']
                     )
-            new_items = OpenSearchConnector(config['connectors']['opensearch']).tracking_output(query_result=collected_results, definition=definition)
-            logger.debug(f"Got {len(new_items)} for last run of  \"{definition['uuid']}\".")
-            if len(new_items) > 0:
-                logger.info(f"Appending notification for {len(new_items)} items.")
-                notification = f"🚨🚨🚨 Tracking Results for \"{definition['title']}\" ({definition['uuid']}) on {source_string.capitalize()}:\n{'\n'.join([notify_string for notify_string in Tracking.create_notify_strings(new_items)])}"
-                Tracking.notify_for_new_elements(notification, config)
+                    if not definition['query']['source'][source_string]['expand']:
+                        collected_results.extend(query_result)
+                        query.output(
+                            config = config,
+                            query_result = query_result,
+                            output_format=definition['output'],
+                        ) 
+                    else:
+                        logger.debug(f"Length of expanded query result is {len(expanded_query_result)}.")
+                        collected_results.extend(expanded_query_result)
+                        query.output(
+                            config = config,
+                            query_result = expanded_query_result,
+                            output_format=definition['output'],
+                        )
+                
+                    new_items = opensearch_connector.tracking_output(query_result=collected_results, definition=definition)
+                    logger.debug(f"Got {len(new_items)} for last run of  \"{definition['uuid']}\".")
+                    if len(new_items) > 0:
+                        logger.info(f"Appending notification for {len(new_items)} items.")
+                        notification = f"🚨🚨🚨 Tracking Results for \"{definition['title']}\" ({definition['uuid']}) on {source_string.capitalize()}:\n{'\n'.join([notify_string for notify_string in Tracking.create_notify_strings(new_items)])}"
+                        Tracking.notify_for_new_elements(notification, config)
+        else:
+            logger.error("OpenSearchConnector is not available. OpenSearch is required for this feature.")
+            return
                 
     
     def load_definitions(tracking_definition_path:Path = None) -> tuple[list, dict]:

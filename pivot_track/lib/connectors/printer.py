@@ -62,7 +62,7 @@ class JSONPrinter(OutputConnector):
                 loaded = json.loads(input)
                 printable =  json.dumps(loaded, indent=indent)
             except ValueError as e:
-                # TODO add Error Logging
+                logger.error("Could not print input in JSON format.")
                 printable = ""
         print(printable)
     

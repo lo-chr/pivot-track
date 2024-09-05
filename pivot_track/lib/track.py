@@ -53,7 +53,7 @@ class Tracking:
                         expand = definition['query']['source'][source_string]['expand']
                     )
                     if not definition['query']['source'][source_string]['expand']:
-                        collected_results.extend(query_result)
+                        collected_results.append(query_result)
                         query.Querying.output(
                             config = config,
                             query_result = query_result,

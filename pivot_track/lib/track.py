@@ -45,7 +45,8 @@ class Tracking:
                 logger.info(f"Start tracking with source \"{source.__name__}\" for definition \"{definition['uuid']}\".")
 
                 collected_results = list()
-                for host_search in definition['query']['source'][source_string]['host_generic']:
+                host_searches = definition['query']['source'][source_string]['host_generic'] if definition['query']['source'][source_string]['host_generic'] != None else []
+                for host_search in host_searches:
                     query_result, expanded_query_result = query.Querying.host_query(
                         config = config,
                         search = host_search,

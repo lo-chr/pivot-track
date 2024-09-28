@@ -1,7 +1,7 @@
 import logging
 
 from .connectors import HostQuery, ShodanSourceConnector, CensysSourceConnector, SourceConnector, OpenSearchConnector, CLIPrinter, JSONPrinter
-from common_osint_model import Host, BaseModel
+from common_osint_model import Host
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,7 @@ class QueryResult:
         self.search_term = search_term
 
     @property
-    def com_result(self) -> BaseModel | list[BaseModel]:
+    def com_result(self) -> Host | list[Host]:
         logger.info("Convert raw data to Common OSINT Model.")
         if self.source is ShodanSourceConnector:
             logger.debug("Trying to convert raw Shodan result to Common OSINT Model.")

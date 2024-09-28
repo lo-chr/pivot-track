@@ -61,14 +61,14 @@ class QueryResult:
 
 class Querying:
     def host(config:dict, host:str, source:HostQuery) -> QueryResult:        
-        if not isinstance(source, HostQuery) and not issubclass(source, HostQuery):
+        if isinstance(source, HostQuery):
+            logger.info(f"Query for \"{host}\" with service {source.__name__}.")
+            connection = source(config['connectors'][source.__name__.lower().removesuffix("sourceconnector")])
+            return QueryResult(connection.query_host(host), query_command = "host", search_term=host)
+        else:
             logger.warn(f"Did not find connector. Raising NotImplementedError Exception.")
             raise NotImplementedError(f"Did not find HostQuery connector.")
         
-        logger.info(f"Query for \"{host}\" with service {source.__name__}.")
-        connection = source(config['connectors'][source.__name__.lower().removesuffix("sourceconnector")])
-        return QueryResult(connection.query_host(host), query_command = "host", search_term=host)
-    
 
     def host_query(config:dict, search:str, source:HostQuery, expand=False) -> QueryResult | tuple[QueryResult, QueryResult]:
         logger.info(f"Search for \"{search}\" with service {source.__name__}.")

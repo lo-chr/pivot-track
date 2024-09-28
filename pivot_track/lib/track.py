@@ -43,14 +43,14 @@ class Tracking:
             source_string = source.__name__.lower().removesuffix("sourceconnector")
             for definition in definitions:
                 logger.info(f"Start tracking with source \"{source.__name__}\" for definition \"{definition['uuid']}\".")
+                connection = source(config['connectors'][source.__name__.lower().removesuffix("sourceconnector")])
 
                 collected_results = list()
                 host_searches = definition['query']['source'][source_string]['host_generic'] if definition['query']['source'][source_string]['host_generic'] != None else []
                 for host_search in host_searches:
                     query_result, expanded_query_result = query.Querying.host_query(
-                        config = config,
                         search = host_search,
-                        source = source,
+                        connection = connection,
                         expand = definition['query']['source'][source_string]['expand']
                     )
                     if not definition['query']['source'][source_string]['expand']:

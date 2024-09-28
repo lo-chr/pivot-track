@@ -60,30 +60,26 @@ class QueryResult:
             return 1        # Case for only one element (no collection)
 
 class Querying:
-    def host(config:dict, host:str, source:HostQuery) -> QueryResult:        
-        if isinstance(source, HostQuery):
-            logger.info(f"Query for \"{host}\" with service {source.__name__}.")
-            connection = source(config['connectors'][source.__name__.lower().removesuffix("sourceconnector")])
+    def host(host:str, connection:HostQuery) -> QueryResult:        
+        if connection != None and isinstance(connection, HostQuery) and type(host) == str:
+            logger.info(f"Query for \"{host}\" with service {connection.__class__.__name__}.")
             return QueryResult(connection.query_host(host), query_command = "host", search_term=host)
         else:
             logger.warn(f"Did not find connector. Raising NotImplementedError Exception.")
             raise NotImplementedError(f"Did not find HostQuery connector.")
-        
 
-    def host_query(config:dict, search:str, source:HostQuery, expand=False) -> QueryResult | tuple[QueryResult, QueryResult]:
-        logger.info(f"Search for \"{search}\" with service {source.__name__}.")
-        
-        if source == None:
-            logger.warn(f"Did not find connector for service {service}. Raising NotImplementedError Exception.")
-            raise NotImplementedError
-        connection = source(config['connectors'][source.__name__.lower().removesuffix("sourceconnector")])
-        query_result = QueryResult(connection.query_host_search(search), query_command="generic", search_term=search)
-        if not expand:
-            return (query_result, None)
+    def host_query(search:str, connection:HostQuery, expand=False) -> QueryResult | tuple[QueryResult, QueryResult]:        
+        if connection != None and isinstance(connection, HostQuery) and type(search) == str:
+            logger.info(f"Search for \"{search}\" with service {connection.__class__.__name__}.")
+            query_result = QueryResult(connection.query_host_search(search), query_command="generic", search_term=search)
+            if not expand:
+                return (query_result, None)
+            else:
+                com_elements = query_result.com_result if query_result.is_collection else [query_result.com_result]
+                return (query_result, [Querying.host(host=com_element.ip, connection = connection) for com_element in com_elements])
         else:
-            com_elements = query_result.com_result if query_result.is_collection else [query_result.com_result]
-            return (query_result, [Querying.host(config = config, host=com_element.ip, source = source) for com_element in com_elements])
-
+            logger.warn(f"Did not find connector. Raising NotImplementedError Exception.")
+            raise NotImplementedError(f"Did not find HostQuery connector.")
 
     def output(config:dict, query_result:QueryResult, output_format:str = "cli", raw = False):
         if output_format == "cli":

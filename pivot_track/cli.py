@@ -55,10 +55,10 @@ def query_host(service:str,
 
     config = init_application(Path(config_path))
     source_connector = utils.find_connector_class(HostQuery, name=service)
+    connection_config = config['connectors'][source_connector.__name__.lower().removesuffix("sourceconnector")]
     try:  
-        host_query_result = query.Querying.host(config = config,
-                                       host = host,
-                                       source = source_connector)
+        host_query_result = query.Querying.host(host = host,
+                                                connection = source_connector(connection_config))
         query.Querying.output(
             config = config,
             query_result = host_query_result,
@@ -88,8 +88,9 @@ def query_generic(service:str,
 
     config = init_application(Path(config_path))
     source_connector = utils.find_connector_class(HostQuery, name=service)
+    connection_config = config['connectors'][source_connector.__name__.lower().removesuffix("sourceconnector")]
     try:
-        generic_query_result, expanded_query_result = query.host_query(config = config, search = search, source = source_connector, expand=expand)
+        generic_query_result, expanded_query_result = query.Querying.host_query(search = search, connection = source_connector(connection_config), expand=expand)
         if not expand:
             query.output(
                 config = config,

@@ -60,12 +60,12 @@ class QueryResult:
             return 1        # Case for only one element (no collection)
 
 class Querying:
-    def host(config:dict, host:str, source:HostQuery) -> QueryResult:
-        logger.info(f"Query for \"{host}\" with service {source.__name__}.")
+    def host(config:dict, host:str, source:HostQuery) -> QueryResult:        
+        if not isinstance(source, HostQuery) and not issubclass(source, HostQuery):
+            logger.warn(f"Did not find connector. Raising NotImplementedError Exception.")
+            raise NotImplementedError(f"Did not find HostQuery connector.")
         
-        if source == None:
-            logger.warn(f"Did not find connector for service {service}. Raising NotImplementedError Exception.")
-            raise NotImplementedError
+        logger.info(f"Query for \"{host}\" with service {source.__name__}.")
         connection = source(config['connectors'][source.__name__.lower().removesuffix("sourceconnector")])
         return QueryResult(connection.query_host(host), query_command = "host", search_term=host)
     

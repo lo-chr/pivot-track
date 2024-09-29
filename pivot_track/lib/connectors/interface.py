@@ -33,6 +33,10 @@ class SourceConnector(ABC):
 
         logger.debug("Update last_call timestamp for API consumption throttling")
         self.last_call = int(round(datetime.now().timestamp()) * 1000)
+    
+    @property
+    def short_name(self):
+        return self.__class__.__name__.lower().removesuffix("sourceconnector")
 
 class HostQuery(ABC):
     """This class represents a interface for requesting host information at a source."""

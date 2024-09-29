@@ -1,5 +1,9 @@
 import logging, yaml, time
+from datetime import datetime, UTC, date
 from pathlib import Path
+from pydantic import BaseModel, ValidationError
+from typing import Optional, List, Literal
+from uuid import UUID
 
 from . import query, utils
 from .connectors import SourceConnector, OpenSearchConnector
@@ -7,6 +11,87 @@ from .connectors import SourceConnector, OpenSearchConnector
 logger = logging.getLogger(__name__)
 
 from common_osint_model import Domain, Host
+
+class TrackingQuery(BaseModel):
+    source:Literal['censys', 'shodan']
+    command:Literal['host_generic', 'host']
+    query:str
+    expand:Optional[bool] = False
+
+    @classmethod
+    def from_dict(cls, query_dict:dict):
+        source = query_dict.get('source')
+        command = query_dict.get('command')
+        expand = query_dict.get('expand', False)
+        query = query_dict.get('query')
+
+        return TrackingQuery(source=source, command=command, query=query, expand=expand)
+
+
+class TrackingDefinition(BaseModel):
+    uuid:UUID
+    query:List[TrackingQuery]
+    title:Optional[str] = None
+    status:Optional[str] = None
+    description:Optional[str] = None
+    author:Optional[str] = None
+    created:Optional[date] = None
+    modified:Optional[date] = None
+    tags:Optional[List[str]] = list()
+    output:Optional[str] = None
+
+    @classmethod
+    def from_yaml(cls, definition:str):
+        parsed_definition = yaml.safe_load(definition)
+        return cls.from_dict(parsed_definition)
+
+    @classmethod
+    def from_dict(cls, definition:dict):
+        uuid = definition.get('uuid')
+        if uuid is not None:
+            try:
+                uuid = UUID(uuid)
+            except ValueError:
+                raise ValidationError
+        
+        # This needs to be replaced with a proper typed TrackingDefinitionQuery (or similar)
+        query = definition.get('query')
+        if query is None or len(query) == 0 or not type(query) == list:
+            query = None
+        else:
+            query = [TrackingQuery.from_dict(query_element) for query_element in query]
+        
+        title = definition.get('title')
+        status = definition.get('status')
+        description = definition.get('description')
+        author = definition.get('author')
+        created = definition.get('created')
+        if created is not None:
+            try:
+                created = datetime.strptime(created, "%Y/%m/%d").date()
+            except ValueError:
+                raise ValidationError
+
+        modified = definition.get('modified')
+        if modified is not None:
+            try:
+                modified = datetime.strptime(modified, "%Y/%m/%d").date()
+            except ValueError:
+                raise ValidationError
+        
+        tags = [tag for tag in definition.get('tags', list())]
+        output = definition.get('output')
+        return TrackingDefinition(uuid=uuid,
+                                  query=query,
+                                  title=title,
+                                  status=status,
+                                  description=description,
+                                  author=author,
+                                  created=created,
+                                  modified=modified,
+                                  tags=tags,
+                                  output=output)
+
 
 class Tracking:
     """The `Tracking` class is responsbile for the tracking feature within Pivot Track. Tracking means,

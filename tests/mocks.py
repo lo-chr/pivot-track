@@ -1,4 +1,5 @@
-from pivot_track.lib.connectors import CensysSourceConnector, ShodanSourceConnector
+from pivot_track.lib.connectors import CensysSourceConnector, ShodanSourceConnector, OpenSearchConnector
+from common_osint_model import Host
 
 # Censys examples based on https://github.com/censys/censys-python/blob/main/tests/search/v2/test_hosts.py
 CENSYS_TEST_HOST = "8.8.8.8"
@@ -284,6 +285,10 @@ class MockShodanSourceConnector(ShodanSourceConnector):
     def __init__(self):
         pass
 
+    @property
+    def short_name(self):
+        return "ShodanSourceConnector".lower().removesuffix("sourceconnector")
+
     def query_host(self, host:str):
         return SHODAN_HOST_JSON
     
@@ -294,8 +299,29 @@ class MockCensysSourceConnector(CensysSourceConnector):
     def __init__(self):
         pass
 
+    @property
+    def short_name(self):
+        return "CensysSourceConnector".lower().removesuffix("sourceconnector")
+
     def query_host(self, host:str):
         return CENSYS_HOST_JSON
     
     def query_host_search(self, query:str):
         return CENSYS_SEARCH_JSON
+
+class MockOpenSearchConnector(OpenSearchConnector):
+    def __init__(self):
+        pass
+
+    def query_output(self, query_result, raw=False):
+        pass
+
+    def available(self):
+        return True
+    
+    def tracking_output(self, query_result, definition):
+        new_elements = list()
+        com_list = self.query_result_to_com_list(query_result)
+        for com_result_element in com_list:
+            new_elements.append(com_result_element)
+        return new_elements

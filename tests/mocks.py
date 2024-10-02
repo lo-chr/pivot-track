@@ -1,4 +1,8 @@
-from pivot_track.lib.connectors import CensysSourceConnector, ShodanSourceConnector, OpenSearchConnector
+from pivot_track.lib.connectors import (
+    CensysSourceConnector,
+    ShodanSourceConnector,
+    OpenSearchConnector,
+)
 
 # Censys examples based on https://github.com/censys/censys-python/blob/main/tests/search/v2/test_hosts.py
 CENSYS_TEST_HOST = "8.8.8.8"
@@ -34,23 +38,23 @@ CENSYS_HOST_JSON = {
     "last_updated_at": "2021-04-01T14:10:10.712Z",
 }
 CENSYS_SEARCH_JSON = [
-        {
-            "services": [
-                {"service_name": "HTTP", "port": 443},
-                {"service_name": "HTTP", "port": 80},
-            ],
-            "ip": "1.0.0.0",
-            "last_updated_at": "2023-07-15T08:54:31.636Z",
-        },
-        {
-            "services": [
-                {"service_name": "HTTP", "port": 443},
-                {"service_name": "HTTP", "port": 80},
-            ],
-            "ip": "1.0.0.1",
-            "last_updated_at": "2023-07-15T08:54:31.636Z",
-        },
-    ]
+    {
+        "services": [
+            {"service_name": "HTTP", "port": 443},
+            {"service_name": "HTTP", "port": 80},
+        ],
+        "ip": "1.0.0.0",
+        "last_updated_at": "2023-07-15T08:54:31.636Z",
+    },
+    {
+        "services": [
+            {"service_name": "HTTP", "port": 443},
+            {"service_name": "HTTP", "port": 80},
+        ],
+        "ip": "1.0.0.1",
+        "last_updated_at": "2023-07-15T08:54:31.636Z",
+    },
+]
 
 # Shodan examples based on https://developer.shodan.io/api
 SHODAN_TEST_HOST = "8.8.8.8"
@@ -67,9 +71,7 @@ SHODAN_HOST_JSON = {
     "tags": [],
     "area_code": None,
     "country_name": "United States",
-    "hostnames": [
-        "dns.google"
-    ],
+    "hostnames": ["dns.google"],
     "org": "Google",
     "data": [
         {
@@ -78,7 +80,7 @@ SHODAN_HOST_JSON = {
                 "options": {},
                 "ptr": True,
                 "module": "dns-udp",
-                "crawler": "ac284849be0745621b3c518f74c14cf43cafbf08"
+                "crawler": "ac284849be0745621b3c518f74c14cf43cafbf08",
             },
             "hash": -553166942,
             "os": None,
@@ -88,9 +90,7 @@ SHODAN_HOST_JSON = {
             "ip": 134744072,
             "isp": "Google",
             "port": 53,
-            "hostnames": [
-                "dns.google"
-            ],
+            "hostnames": ["dns.google"],
             "location": {
                 "city": None,
                 "region_code": None,
@@ -101,37 +101,31 @@ SHODAN_HOST_JSON = {
                 "postal_code": None,
                 "dma_code": None,
                 "country_code": "US",
-                "latitude": 37.751
+                "latitude": 37.751,
             },
             "dns": {
                 "resolver_hostname": None,
                 "recursive": True,
                 "resolver_id": None,
-                "software": None
+                "software": None,
             },
             "timestamp": "2021-01-22T08:49:35.190817",
-            "domains": [
-                "dns.google"
-            ],
+            "domains": ["dns.google"],
             "org": "Google",
             "data": "\nRecursion: enabled",
             "asn": "AS15169",
             "transport": "udp",
-            "ip_str": "8.8.8.8"
+            "ip_str": "8.8.8.8",
         }
     ],
     "asn": "AS15169",
     "isp": "Google",
     "longitude": -97.822,
     "country_code3": None,
-    "domains": [
-        "dns.google"
-    ],
+    "domains": ["dns.google"],
     "ip_str": "8.8.8.8",
     "os": None,
-    "ports": [
-        53
-    ]
+    "ports": [53],
 }
 SHODAN_SEARCH_JSON = {
     "matches": [
@@ -142,15 +136,11 @@ SHODAN_SEARCH_JSON = {
             "org": "Comcast Business",
             "isp": "Comcast Business",
             "transport": "tcp",
-            "cpe": [
-                "cpe:/a:igor_sysoev:nginx"
-            ],
+            "cpe": ["cpe:/a:igor_sysoev:nginx"],
             "data": "HTTP/1.1 400 Bad Request\r\nServer: nginx\r\nDate: Mon, 25 Jan 2021 21:33:48 GMT\r\nContent-Type: text/html\r\nContent-Length: 650\r\nConnection: close\r\n\r\n",
             "asn": "AS7922",
             "port": 443,
-            "hostnames": [
-                "three.webapplify.net"
-            ],
+            "hostnames": ["three.webapplify.net"],
             "location": {
                 "city": "Denver",
                 "region_code": "CO",
@@ -161,12 +151,10 @@ SHODAN_SEARCH_JSON = {
                 "postal_code": None,
                 "dma_code": 751,
                 "country_code": "US",
-                "country_name": "United States"
+                "country_name": "United States",
             },
             "timestamp": "2021-01-25T21:33:49.154513",
-            "domains": [
-                "webapplify.net"
-            ],
+            "domains": ["webapplify.net"],
             "http": {
                 "robots_hash": None,
                 "redirects": [],
@@ -181,7 +169,7 @@ SHODAN_SEARCH_JSON = {
                 "components": {},
                 "securitytxt_hash": None,
                 "sitemap": None,
-                "html_hash": 199333125
+                "html_hash": 199333125,
             },
             "os": None,
             "_shodan": {
@@ -189,23 +177,19 @@ SHODAN_SEARCH_JSON = {
                 "ptr": True,
                 "id": "534cc127-e734-44bc-be88-2e219a56a099",
                 "module": "auto",
-                "options": {}
+                "options": {},
             },
-            "ip_str": "96.93.212.27"
+            "ip_str": "96.93.212.27",
         },
         {
             "product": "nginx",
-            "hostnames": [
-                "kolobok.us"
-            ],
+            "hostnames": ["kolobok.us"],
             "hash": 1940048442,
             "ip": 3104568883,
             "org": "RuWeb",
             "isp": "RuWeb",
             "transport": "tcp",
-            "cpe": [
-                "cpe:/a:igor_sysoev:nginx:1.4.2"
-            ],
+            "cpe": ["cpe:/a:igor_sysoev:nginx:1.4.2"],
             "data": "HTTP/1.1 410 Gone\r\nServer: nginx/1.4.2\r\nDate: Mon, 25 Jan 2021 21:33:50 GMT\r\nContent-Type: text/html; charset=iso-8859-1\r\nContent-Length: 295\r\nConnection: keep-alive\r\n\r\n",
             "asn": "AS49189",
             "port": 80,
@@ -220,12 +204,10 @@ SHODAN_SEARCH_JSON = {
                 "postal_code": None,
                 "dma_code": None,
                 "country_code": "RU",
-                "country_name": "Russia"
+                "country_name": "Russia",
             },
             "timestamp": "2021-01-25T21:33:51.172037",
-            "domains": [
-                "kolobok.us"
-            ],
+            "domains": ["kolobok.us"],
             "http": {
                 "robots_hash": None,
                 "redirects": [],
@@ -240,7 +222,7 @@ SHODAN_SEARCH_JSON = {
                 "components": {},
                 "securitytxt_hash": None,
                 "sitemap": None,
-                "html_hash": 922034037
+                "html_hash": 922034037,
             },
             "os": None,
             "_shodan": {
@@ -248,37 +230,23 @@ SHODAN_SEARCH_JSON = {
                 "ptr": True,
                 "id": "118b7360-01d0-4edb-8ee9-01e411c23e60",
                 "module": "auto",
-                "options": {}
+                "options": {},
             },
-            "ip_str": "185.11.246.51"
+            "ip_str": "185.11.246.51",
         },
     ],
     "facets": {
         "country": [
-            {
-                "count": 7883733,
-                "value": "US"
-            },
-            {
-                "count": 2964965,
-                "value": "CN"
-            },
-            {
-                "count": 1945369,
-                "value": "DE"
-            },
-            {
-                "count": 1717359,
-                "value": "HK"
-            },
-            {
-                "count": 940900,
-                "value": "FR"
-            }
+            {"count": 7883733, "value": "US"},
+            {"count": 2964965, "value": "CN"},
+            {"count": 1945369, "value": "DE"},
+            {"count": 1717359, "value": "HK"},
+            {"count": 940900, "value": "FR"},
         ]
     },
-    "total": 23047224
+    "total": 23047224,
 }
+
 
 class MockShodanSourceConnector(ShodanSourceConnector):
     def __init__(self):
@@ -288,11 +256,12 @@ class MockShodanSourceConnector(ShodanSourceConnector):
     def short_name(self):
         return "ShodanSourceConnector".lower().removesuffix("sourceconnector")
 
-    def query_host(self, host:str):
+    def query_host(self, host: str):
         return SHODAN_HOST_JSON
-    
-    def query_host_search(self, query:str):
+
+    def query_host_search(self, query: str):
         return SHODAN_SEARCH_JSON
+
 
 class MockCensysSourceConnector(CensysSourceConnector):
     def __init__(self):
@@ -302,11 +271,12 @@ class MockCensysSourceConnector(CensysSourceConnector):
     def short_name(self):
         return "CensysSourceConnector".lower().removesuffix("sourceconnector")
 
-    def query_host(self, host:str):
+    def query_host(self, host: str):
         return CENSYS_HOST_JSON
-    
-    def query_host_search(self, query:str):
+
+    def query_host_search(self, query: str):
         return CENSYS_SEARCH_JSON
+
 
 class MockOpenSearchConnector(OpenSearchConnector):
     def __init__(self):
@@ -317,7 +287,7 @@ class MockOpenSearchConnector(OpenSearchConnector):
 
     def available(self):
         return True
-    
+
     def tracking_output(self, query_result, definition):
         new_elements = list()
         com_list = self.query_result_to_com_list(query_result)

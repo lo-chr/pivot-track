@@ -117,6 +117,7 @@ def query_generic(service:str,
 def automatic_track(
     config_path: Annotated[str, typer.Option(envvar="PIVOTTRACK_CONFIG")] = None,
     definition_path: Annotated[str, typer.Option(envvar="PIVOTTRACK_TRACK_DEFINITIONS")] = None,
+    run_once: Annotated[bool, typer.Option(envvar="PIVOTTRACK_TRACK_RUNONCE")] = False,
     interval: Annotated[int, typer.Option(envvar="PIVOTTRACK_TRACK_INTERVAL")] = 600    # Default to 10 minutes
 ):
     if config_path == None:
@@ -130,14 +131,19 @@ def automatic_track(
     source_connections = utils.init_source_connections(config)
     # For now we assume, that there is just one output connection (OpenSearch), this will change soon
     output_connections = utils.init_output_connections(config)[0]
+
+    running = True
     
-    while True:
+    while running:
         definitions = track.Tracking.load_yaml_definition_files(Path(definition_path))
         track.Tracking.track_definitions(definitions=definitions, source_connections=source_connections, output_connection=output_connections)
-        logger.info(f"Done tracking for now. Waiting {interval} seconds for next try.")
-        time.sleep(interval)
+        if not run_once:
+            logger.info(f"Done tracking for now. Waiting {interval} seconds for next try.")
+            time.sleep(interval)
+        else:
+            running = False
+            logger.info(f"Tracking finished.")
 
-    #track.Tracking.execute_tracker(config=config, tracking_definition_path=Path(definition_path), interval = interval)
 
 @app.command("init-opensearch", help="This command helps you initializing opensearch indicies, required for the '--output opensearch' option.")
 def init_opensearch(config_path: Annotated[str, typer.Option(envvar="PIVOTTRACK_CONFIG")] = None):

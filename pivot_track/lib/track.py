@@ -274,6 +274,7 @@ class Tracking:
     def definitions_by_source(
         definitions: List[TrackingDefinition], source: str
     ) -> List[TrackingDefinition]:
+        """This function returns all definitions, that are applicable to a specific source."""
         if not isinstance(source, str):
             raise TypeError("'source' has to be of type 'str'.")
         result_definitions = list()

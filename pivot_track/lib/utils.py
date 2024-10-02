@@ -1,10 +1,10 @@
-from pathlib import Path
-from typing import List
-from pivot_track.lib.connectors import SourceConnector, OutputConnector
 import yaml
+from pathlib import Path
+from typing import List, Dict
+from pivot_track.lib.connectors import SourceConnector, OutputConnector
 
 
-def load_config(path: Path = None) -> dict:
+def load_config(path: Path = None) -> Dict[str, Dict]:
     """This function is loads the configuration from a file and returns it."""
     if not isinstance(path, Path):
         raise AttributeError("Pivot Track configuration path only allows Path objects.")

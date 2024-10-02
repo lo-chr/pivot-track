@@ -5,8 +5,9 @@ from typing_extensions import Annotated
 from rich.console import Console
 from pathlib import Path
 
-from .lib import utils, query, track
-from .lib.connectors import OpenSearchConnector, SourceConnector, HostQuery
+from pivot_track.lib import utils
+from pivot_track.lib import Tracking, Querying
+from pivot_track.lib.connectors import OpenSearchConnector, SourceConnector, HostQuery
 
 
 def init_application(config_path: Path = None) -> dict:
@@ -35,15 +36,13 @@ def init_application(config_path: Path = None) -> dict:
 
 
 # Create Typer App
-# app = typer.Typer(help="Pivot Track helps TI analysts to pivot on IoC and to track their research.", pretty_exceptions_show_locals=False)
-# query_app = typer.Typer(help="This module helps to query different sources of OSINT platforms and databases.", pretty_exceptions_show_locals=False)
 app = typer.Typer(
     help="Pivot Track helps TI analysts to pivot on IoC and to track their research.",
-    pretty_exceptions_show_locals=True,
+    pretty_exceptions_show_locals=False,
 )
 query_app = typer.Typer(
     help="This module helps to query different sources of OSINT platforms and databases.",
-    pretty_exceptions_show_locals=True,
+    pretty_exceptions_show_locals=False,
 )
 app.add_typer(query_app, name="query")
 
@@ -78,10 +77,10 @@ def query_host(
         source_connector.__name__.lower().removesuffix("sourceconnector")
     ]
     try:
-        host_query_result = query.Querying.host(
+        host_query_result = Querying.host(
             host=host, connection=source_connector(connection_config)
         )
-        query.Querying.output(
+        Querying.output(
             config=config, query_result=host_query_result, output_format=output, raw=raw
         )
 
@@ -119,18 +118,18 @@ def query_generic(
         source_connector.__name__.lower().removesuffix("sourceconnector")
     ]
     try:
-        generic_query_result, expanded_query_result = query.Querying.host_query(
+        generic_query_result, expanded_query_result = Querying.host_query(
             search=search, connection=source_connector(connection_config), expand=expand
         )
         if not expand:
-            query.Querying.output(
+            Querying.output(
                 config=config,
                 query_result=generic_query_result,
                 output_format=output,
                 raw=raw,
             )
         else:
-            query.Querying.output(
+            Querying.output(
                 config=config,
                 query_result=expanded_query_result,
                 output_format=output,
@@ -175,8 +174,8 @@ def automatic_track(
     running = True
 
     while running:
-        definitions = track.Tracking.load_yaml_definition_files(Path(definition_path))
-        track.Tracking.track_definitions(
+        definitions = Tracking.load_yaml_definition_files(Path(definition_path))
+        Tracking.track_definitions(
             definitions=definitions,
             source_connections=source_connections,
             output_connection=output_connections,

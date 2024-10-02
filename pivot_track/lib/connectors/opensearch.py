@@ -115,19 +115,19 @@ class OpenSearchConnector(OutputConnector):
         return super().query_result_to_com_list(query_result)
     
     # TODO: Add tracking output interface
-    def tracking_output(self, query_result, definition:dict):
+    def tracking_output(self, query_result, definition):
         new_elements = []
         pivottrack_metadata = {
             "tracking_timestamp" : datetime.now(timezone.utc).isoformat(),
             "tracking_reference" : str(uuid.uuid4())
         }
         pivottrack_tracking_definition = {
-            "title" : definition['title'],
-            "uuid" : definition['uuid'],
-            "status" : definition['status'],
-            "date" : definition['date'],
-            "modified" : definition['modified'],
-            "tags" : definition['tags']
+            "title" : definition.title,
+            "uuid" : definition.uuid,
+            "status" : definition.status,
+            "created" : definition.created,
+            "modified" : definition.modified,
+            "tags" : definition.tags
         }
         
         com_list = self.query_result_to_com_list(query_result)
@@ -155,7 +155,7 @@ class OpenSearchConnector(OutputConnector):
                     "bool" : {
                         "filter": [{
                             "match": {
-                                "pt_tracking_definition.uuid": definition['uuid']
+                                "pt_tracking_definition.uuid": definition.uuid
                             }
                         },{ 
                             "match": {
@@ -174,7 +174,7 @@ class OpenSearchConnector(OutputConnector):
                     "bool" : {
                         "filter": [{
                             "match": {
-                                "pt_tracking_definition.uuid": definition['uuid']
+                                "pt_tracking_definition.uuid": definition.uuid
                             }
                         },{ 
                             "match": {

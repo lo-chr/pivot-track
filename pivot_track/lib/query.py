@@ -37,7 +37,8 @@ class QueryResult:
             elif 'matches' in self.raw_result.keys() and 'total' in self.raw_result.keys():
                 return ShodanSourceConnector
             else:
-                logger.warn("Could not determine SourceConnector typer.")
+                logger.warn("Could not determine SourceConnector type.")
+                print(self.raw_result)
                 return None
         elif type(self.raw_result) == list:
             return CensysSourceConnector
@@ -71,12 +72,16 @@ class Querying:
     def host_query(search:str, connection:HostQuery, expand=False) -> QueryResult | tuple[QueryResult, QueryResult]:        
         if connection != None and isinstance(connection, HostQuery) and type(search) == str:
             logger.info(f"Search for \"{search}\" with service {connection.__class__.__name__}.")
-            query_result = QueryResult(connection.query_host_search(search), query_command="generic", search_term=search)
-            if not expand:
-                return (query_result, None)
+            conn_result = connection.query_host_search(search)
+            if not conn_result == None:
+                query_result = QueryResult(conn_result, query_command="generic", search_term=search)
+                if not expand:
+                    return (query_result, None)
+                else:
+                    com_elements = query_result.com_result if query_result.is_collection else [query_result.com_result]
+                    return (query_result, [Querying.host(host=com_element.ip, connection = connection) for com_element in com_elements])
             else:
-                com_elements = query_result.com_result if query_result.is_collection else [query_result.com_result]
-                return (query_result, [Querying.host(host=com_element.ip, connection = connection) for com_element in com_elements])
+                return (None, None)
         else:
             logger.warn(f"Did not find connector. Raising NotImplementedError Exception.")
             raise NotImplementedError(f"Did not find HostQuery connector.")

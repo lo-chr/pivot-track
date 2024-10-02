@@ -6,7 +6,7 @@ from typing import Optional, List, Literal
 from uuid import UUID
 
 from . import query, utils
-from .connectors import SourceConnector, OpenSearchConnector
+from pivot_track.lib.connectors import SourceConnector, OpenSearchConnector, OutputConnector
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class TrackingQuery(BaseModel):
 
 class TrackingDefinition(BaseModel):
     uuid:UUID
-    query:List[TrackingQuery]
+    queries:List[TrackingQuery]
     title:Optional[str] = None
     status:Optional[str] = None
     description:Optional[str] = None
@@ -39,6 +39,49 @@ class TrackingDefinition(BaseModel):
     modified:Optional[date] = None
     tags:Optional[List[str]] = list()
     output:Optional[str] = None
+
+    @property
+    def sources(self):
+        sources = set()
+        for query_item in self.queries:
+            sources.add(query_item.source)
+        return sources
+    
+    @property
+    def commands(self):
+        commands = set()
+        for query_item in self.queries:
+            commands.add(query_item.command)
+        return commands
+    
+    def queries_by_source(self, source:str):
+        queries = list()
+        for query_item in self.queries:
+            if query_item.source == source:
+                queries.append(query_item)
+        return queries
+    
+    def queries_by_command(self, command:str):
+        queries = list()
+        for query_item in self.queries:
+            if query_item.command == command:
+                queries.append(query_item)
+        return queries
+    
+    def queries_by_filter(self, command:str=None, source:str=None):
+        if command == None and source == None:
+            return self.queries()
+        elif command == None and isinstance(source, str):
+            return self.queries_by_source(source)
+        elif isinstance(command, str) and source == None:
+            return self.queries_by_command
+        else:
+            queries = list()
+            for query_item in self.queries:
+                if query_item.command == command and query_item.source == source:
+                    queries.append(query_item)
+            return queries
+
 
     @classmethod
     def from_yaml(cls, definition:str):
@@ -55,11 +98,11 @@ class TrackingDefinition(BaseModel):
                 raise ValidationError
         
         # This needs to be replaced with a proper typed TrackingDefinitionQuery (or similar)
-        query = definition.get('query')
-        if query is None or len(query) == 0 or not type(query) == list:
-            query = None
+        queries = definition.get('query')
+        if queries is None or len(queries) == 0 or not type(queries) == list:
+            queries = None
         else:
-            query = [TrackingQuery.from_dict(query_element) for query_element in query]
+            queries = [TrackingQuery.from_dict(query_element) for query_element in queries]
         
         title = definition.get('title')
         status = definition.get('status')
@@ -82,7 +125,7 @@ class TrackingDefinition(BaseModel):
         tags = [tag for tag in definition.get('tags', list())]
         output = definition.get('output')
         return TrackingDefinition(uuid=uuid,
-                                  query=query,
+                                  queries=queries,
                                   title=title,
                                   status=status,
                                   description=description,
@@ -97,104 +140,92 @@ class Tracking:
     """The `Tracking` class is responsbile for the tracking feature within Pivot Track. Tracking means,
     the automatic execution and storing of queries against several sources, storing the results
     and providing notifications for newly found items. """
-    def execute_tracker(
-            config:dict = None,
-            tracking_definition_path:Path = None,
-            interval:int = 600
-        ):
-        """This function is responsbile for executing searches defined by a set of tracking definitions.
-        It retries the searches after a given period of time."""
-        if config == None:
-            logger.error("No configuration set. Raising AttributeError.")
-            raise AttributeError("No configuration set.")
-        
-        while True:
-            loaded_definitions, definition_by_source = Tracking.load_definitions(tracking_definition_path)
-            logger.info(f"{len(loaded_definitions)} tracking definition(s) available in total.")
-            for source in definition_by_source.keys():
-                logger.info(f"{len(definition_by_source[source])} tracking definition(s) available for source \"{source}\".")
-                connector = utils.find_connector_class(SourceConnector, source)
-                logger.info(f"Identified connector \"{connector.__name__}\" for source \"{source}\".")
-                Tracking.track_source(source = connector, definitions = definition_by_source[source], config = config)
-            logger.info(f"Done tracking for now. Waiting {interval} seconds for next try.")
-            time.sleep(interval)
+    
+    def track_definitions(definitions:List[TrackingDefinition], source_connections:List[SourceConnector], output_connection:OutputConnector):
+        """The function executes all definitions via the provided connections to sources. The results will be  stored via the provided output connector."""
+        for source_connection in source_connections:
+            definitions_for_source = Tracking.definitions_by_source(definitions, source_connection.short_name)
+            logger.info(f"{len(definitions_for_source)} tracking definition(s) available for source \"{source_connection.short_name}\".")
+            Tracking.track_definitions_for_source(source_connection=source_connection, definitions = definitions_for_source, output_connection=output_connection)
 
-    def track_source(source:SourceConnector = None, definitions:list = None, config:dict = None):
-        """The function executes all queries for one source (i.E. Shodan or Censys)."""
-        opensearch_connector = OpenSearchConnector(config['connectors']['opensearch'])
-        if opensearch_connector.available:
-            logger.info(f"Start tracking {len(definitions)} definition(s) in source \"{source.__name__}\"")
-            
-            source_string = source.__name__.lower().removesuffix("sourceconnector")
+    def track_definitions_for_source(definitions:List[TrackingDefinition], source_connection:SourceConnector, output_connection:OutputConnector):
+        """The function executes all queries for one specific source (i.E. Shodan or Censys)."""
+        opensearch_connection = output_connection
+        if opensearch_connection.available:
+            source_string = source_connection.short_name
+            logger.info(f"Start tracking {len(definitions)} definition(s) in source \"{source_string}\"")
             for definition in definitions:
-                logger.info(f"Start tracking with source \"{source.__name__}\" for definition \"{definition['uuid']}\".")
-                connection = source(config['connectors'][source.__name__.lower().removesuffix("sourceconnector")])
-
-                collected_results = list()
-                host_searches = definition['query']['source'][source_string]['host_generic'] if definition['query']['source'][source_string]['host_generic'] != None else []
-                for host_search in host_searches:
-                    query_result, expanded_query_result = query.Querying.host_query(
-                        search = host_search,
-                        connection = connection,
-                        expand = definition['query']['source'][source_string]['expand']
-                    )
-                    if not definition['query']['source'][source_string]['expand']:
-                        collected_results.append(query_result)
-                        query.Querying.output(
-                            config = config,
-                            query_result = query_result,
-                            output_format=definition['output'],
-                        ) 
-                    else:
-                        logger.debug(f"Length of expanded query result is {len(expanded_query_result)}.")
-                        collected_results.extend(expanded_query_result)
-                        query.Querying.output(
-                            config = config,
-                            query_result = expanded_query_result,
-                            output_format=definition['output'],
-                        )
-                
-                    new_items = opensearch_connector.tracking_output(query_result=collected_results, definition=definition)
-                    logger.debug(f"Got {len(new_items)} for last run of  \"{definition['uuid']}\".")
-                    if len(new_items) > 0:
-                        logger.info(f"Appending notification for {len(new_items)} items.")
-                        notification = f"🚨🚨🚨 Tracking Results for \"{definition['title']}\" ({definition['uuid']}) on {source_string.capitalize()}:\n{'\n'.join([notify_string for notify_string in Tracking.create_notify_strings(new_items)])}"
-                        Tracking.notify_for_new_elements(notification, config)
+                logger.info(f"Start tracking with source \"{source_string}\" for definition \"{str(definition.uuid)}\".")
+                # TODO Fix manual definition of command to be executed
+                host_searches = definition.queries_by_filter(command='host_generic', source=source_string)
+                collected_results = Tracking.execute_tracking_queries(host_searches, source_connection, opensearch_connection)
+                new_items = opensearch_connection.tracking_output(query_result=collected_results, definition=definition)
+                Tracking.notify_callback(definition, new_items)
         else:
             logger.error("OpenSearchConnector is not available. OpenSearch is required for this feature.")
-            return
                 
+    def execute_tracking_queries(queries:List[TrackingQuery], source_connection:SourceConnector, output_connection:OpenSearchConnector = None):
+        """The function is responible for executing a given TrackingQuery on a given source_connection."""
+        collected_results = list()
+        for query_element in queries:
+            query_result, expanded_query_result = query.Querying.host_query(
+                search = query_element.query ,
+                connection = source_connection,
+                expand = query_element.expand
+            )
+            if not query_result == None:
+                if not query_element.expand:
+                    collected_results.append(query_result)
+                    output_result = query_result
+                else:
+                    logger.debug(f"Length of expanded query result is {len(expanded_query_result)}.")
+                    collected_results.extend(expanded_query_result)
+                    output_result = expanded_query_result
+                if not output_connection == None:
+                    output_connection.query_output(query_result=output_result)
+        return collected_results
+
     
-    def load_definitions(tracking_definition_path:Path = None) -> tuple[list, dict]:
-        """This function is responsible for loading all tracking definitions at a given path.
-        It returns a tuple, containing a list with all loaded definitinons. Additionally it
-        returns a dictionary where the key is a given data source and the value the tracking
-        definition."""
-        if tracking_definition_path == None or not tracking_definition_path.exists():
+    def load_yaml_definition_files(definition_yaml_path:Path) -> List[TrackingDefinition]:
+        """The function is loads TrackingDefinitions (in their YAML-representation) from a given path."""
+        if definition_yaml_path == None or not definition_yaml_path.exists():
             logger.error("Could not load tracking definitions. Raising AttributeError.")
             raise AttributeError("Could not load tracking definitions.")
         
-        definition_files_path = [definition_path for definition_path in tracking_definition_path.glob("**/*.yml")]
-        logger.info(f"Found {len(definition_files_path)} definition file(s) in \"{str(tracking_definition_path)}\".")
-        
-        loaded_definitions = list()
-        loaded_definition_by_source = dict()
+        definition_files_path = [definition_path for definition_path in definition_yaml_path.glob("**/*.yml")]
+        logger.info(f"Found {len(definition_files_path)} definition file(s) in \"{str(definition_yaml_path)}\".")
 
+        loaded_definitions = list()
         for definition_file_path in definition_files_path:
             with open(definition_file_path, 'r') as file:
-                # TODO: Validate schema of yaml file
-                definition = yaml.safe_load(file)
+                definition = TrackingDefinition.from_yaml(file)
                 loaded_definitions.append(definition)
-                logger.debug(f"Loaded definition file \"{str(definition_file_path)}\" with UUID \"{definition['uuid']}\".")
-                for source in definition['query']['source'].keys():
-                    if source not in loaded_definition_by_source:
-                        loaded_definition_by_source[source] = []
-                        logger.debug(f"Created new source category \"{source}\" in loaded_definitions_by_source.")
+                logger.debug(f"Loaded definition file \"{str(definition_file_path)}\" with UUID \"{definition.uuid}\".")
+        logger.info(f"Loaded {len(loaded_definitions)} tracking definition(s).")
+        return loaded_definitions
 
-                    loaded_definition_by_source[source].append(definition)
-                    logger.debug(f"Added rule \"{definition['uuid']}\" for source {source}.")
+    def load_definitions(tracking_definition_path:Path = None) -> tuple[list, dict]:
+        """This legacy function is responsible for loading all tracking definitions at a given path.
+        It returns a tuple, containing a list with all loaded definitinons. Additionally it
+        returns a dictionary where the key is a given data source and the value the tracking
+        definition."""
         
-        return loaded_definitions, loaded_definition_by_source
+        loaded_definitions_by_source = dict()
+        loaded_definitions = Tracking.load_yaml_definition_files(tracking_definition_path)
+        loaded_definitions_by_source['censys'] = Tracking.definitions_by_source(loaded_definitions, 'censys')
+        loaded_definitions_by_source['shodan'] = Tracking.definitions_by_source(loaded_definitions, 'shodan')
+        return loaded_definitions, loaded_definitions_by_source
+    
+    def definitions_by_source(definitions:List[TrackingDefinition], source:str) -> List[TrackingDefinition]:
+        if not type(source) == str:
+            raise TypeError(f"'source' has to be of type 'str'.")
+        result_definitions = list()
+        for definition in definitions:
+            if source in definition.sources:
+                result_definitions.append(definition)
+                logger.debug(f"Added rule \"{definition.uuid}\" for source {source}.")
+        logger.info(f"{len(result_definitions)} tracking definition(s) available for source \"{source}\".")
+        return result_definitions
     
     def create_notify_strings(new_elements:list) -> list:
         """This function transfers a set of Common OSINT Model items to a list of identifiable strings (hostnames and IPs for now)."""
@@ -214,3 +245,11 @@ class Tracking:
                 out_file.write(f"{notification}\n\n")
         except FileNotFoundError as e:
             logger.error(f"Could not find notification output: {tracking_file_path.absolute().as_posix()}")
+
+    # TODO Change to proper callback system for notification
+    def notify_callback(definition:TrackingDefinition, new_items:List[Host]):
+        logger.debug(f"Got {len(new_items)} for last run of  \"{str(definition.uuid)}\".")
+        if len(new_items) > 0:
+            logger.info(f"Appending notification for {len(new_items)} items.")
+            notification = f"🚨🚨🚨 Tracking Results for \"{definition.title}\" ({str(definition.uuid)}):\n{'\n'.join([notify_string for notify_string in Tracking.create_notify_strings(new_items)])}"
+            print(notification)

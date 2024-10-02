@@ -11,7 +11,7 @@ class TestLoadConfig:
         assert str(e.value) == "Pivot Track configuration path only allows Path objects."
 
     def test_path_none(self):
-        with pytest.raises(FileNotFoundError) as e:
+        with pytest.raises(AttributeError) as e:
             utils.load_config(None)
     
     def test_path_not_exist(self):

@@ -1,16 +1,17 @@
-import logging, yaml, time
-from datetime import datetime, UTC, date
+import logging
+import yaml
+from datetime import datetime, date
 from pathlib import Path
 from pydantic import BaseModel, ValidationError
 from typing import Optional, List, Literal
 from uuid import UUID
+from common_osint_model import Domain, Host
 
-from . import query, utils
+from . import query
 from pivot_track.lib.connectors import SourceConnector, OpenSearchConnector, OutputConnector
 
 logger = logging.getLogger(__name__)
 
-from common_osint_model import Domain, Host
 
 class TrackingQuery(BaseModel):
     source:Literal['censys', 'shodan']
@@ -69,11 +70,11 @@ class TrackingDefinition(BaseModel):
         return queries
     
     def queries_by_filter(self, command:str=None, source:str=None):
-        if command == None and source == None:
+        if command is None and source is None:
             return self.queries()
-        elif command == None and isinstance(source, str):
+        elif command is None and isinstance(source, str):
             return self.queries_by_source(source)
-        elif isinstance(command, str) and source == None:
+        elif isinstance(command, str) and source is None:
             return self.queries_by_command
         else:
             queries = list()
@@ -99,7 +100,7 @@ class TrackingDefinition(BaseModel):
         
         # This needs to be replaced with a proper typed TrackingDefinitionQuery (or similar)
         queries = definition.get('query')
-        if queries is None or len(queries) == 0 or not type(queries) == list:
+        if queries is None or len(queries) == 0 or not isinstance(queries, list):
             queries = None
         else:
             queries = [TrackingQuery.from_dict(query_element) for query_element in queries]
@@ -173,7 +174,7 @@ class Tracking:
                 connection = source_connection,
                 expand = query_element.expand
             )
-            if not query_result == None:
+            if query_result is not None:
                 if not query_element.expand:
                     collected_results.append(query_result)
                     output_result = query_result
@@ -181,14 +182,14 @@ class Tracking:
                     logger.debug(f"Length of expanded query result is {len(expanded_query_result)}.")
                     collected_results.extend(expanded_query_result)
                     output_result = expanded_query_result
-                if not output_connection == None:
+                if output_connection is not None:
                     output_connection.query_output(query_result=output_result)
         return collected_results
 
     
     def load_yaml_definition_files(definition_yaml_path:Path) -> List[TrackingDefinition]:
         """The function is loads TrackingDefinitions (in their YAML-representation) from a given path."""
-        if definition_yaml_path == None or not definition_yaml_path.exists():
+        if definition_yaml_path is None or not definition_yaml_path.exists():
             logger.error("Could not load tracking definitions. Raising AttributeError.")
             raise AttributeError("Could not load tracking definitions.")
         
@@ -217,8 +218,8 @@ class Tracking:
         return loaded_definitions, loaded_definitions_by_source
     
     def definitions_by_source(definitions:List[TrackingDefinition], source:str) -> List[TrackingDefinition]:
-        if not type(source) == str:
-            raise TypeError(f"'source' has to be of type 'str'.")
+        if not isinstance(source, str):
+            raise TypeError("'source' has to be of type 'str'.")
         result_definitions = list()
         for definition in definitions:
             if source in definition.sources:
@@ -243,7 +244,7 @@ class Tracking:
         try:
             with open(tracking_file_path, 'a') as out_file:
                 out_file.write(f"{notification}\n\n")
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             logger.error(f"Could not find notification output: {tracking_file_path.absolute().as_posix()}")
 
     # TODO Change to proper callback system for notification

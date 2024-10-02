@@ -28,7 +28,7 @@ class QueryResult:
     @property
     def source(self) -> SourceConnector:
         # Cases for single host query
-        if type(self.raw_result) == dict:
+        if isinstance(self.raw_result, dict):
             if 'data' in self.raw_result.keys() and len(self.raw_result['data']) > 0 and '_shodan' in self.raw_result['data'][0].keys():
                 return ShodanSourceConnector
             elif 'services' in self.raw_result.keys() and 'last_updated_at' in self.raw_result.keys():
@@ -40,13 +40,13 @@ class QueryResult:
                 logger.warn("Could not determine SourceConnector type.")
                 print(self.raw_result)
                 return None
-        elif type(self.raw_result) == list:
+        elif isinstance(self.raw_result, list):
             return CensysSourceConnector
     
 
     @property
     def is_collection(self) -> bool:
-        if (type(self.raw_result) == dict and 'matches' in self.raw_result.keys() and 'total' in self.raw_result.keys()) or type(self.raw_result) == list:
+        if (isinstance(self.raw_result, dict) and 'matches' in self.raw_result.keys() and 'total' in self.raw_result.keys()) or isinstance(self.raw_result, list):
             return True
         else:
             return False
@@ -62,18 +62,18 @@ class QueryResult:
 
 class Querying:
     def host(host:str, connection:HostQuery) -> QueryResult:        
-        if connection != None and isinstance(connection, HostQuery) and type(host) == str:
+        if connection is not None and isinstance(connection, HostQuery) and isinstance(host, str):
             logger.info(f"Query for \"{host}\" with service {connection.__class__.__name__}.")
             return QueryResult(connection.query_host(host), query_command = "host", search_term=host)
         else:
-            logger.warn(f"Did not find connector. Raising NotImplementedError Exception.")
-            raise NotImplementedError(f"Did not find HostQuery connector.")
+            logger.warn("Did not find connector. Raising NotImplementedError Exception.")
+            raise NotImplementedError("Did not find HostQuery connector.")
 
     def host_query(search:str, connection:HostQuery, expand=False) -> QueryResult | tuple[QueryResult, QueryResult]:        
-        if connection != None and isinstance(connection, HostQuery) and type(search) == str:
+        if connection is not None and isinstance(connection, HostQuery) and isinstance(search, str):
             logger.info(f"Search for \"{search}\" with service {connection.__class__.__name__}.")
             conn_result = connection.query_host_search(search)
-            if not conn_result == None:
+            if conn_result is not None:
                 query_result = QueryResult(conn_result, query_command="generic", search_term=search)
                 if not expand:
                     return (query_result, None)
@@ -83,8 +83,8 @@ class Querying:
             else:
                 return (None, None)
         else:
-            logger.warn(f"Did not find connector. Raising NotImplementedError Exception.")
-            raise NotImplementedError(f"Did not find HostQuery connector.")
+            logger.warn("Did not find connector. Raising NotImplementedError Exception.")
+            raise NotImplementedError("Did not find HostQuery connector.")
 
     def output(config:dict, query_result:QueryResult, output_format:str = "cli", raw = False):
         if output_format == "cli":

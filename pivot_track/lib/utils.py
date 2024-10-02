@@ -9,7 +9,7 @@ def load_config(path:Path = None) -> dict:
     if not isinstance(path, Path):
         raise AttributeError("Pivot Track configuration path only allows Path objects.")
     
-    if path == None or not path.exists():
+    if path is None or not path.exists():
         raise FileNotFoundError()
 
     with open(path, 'r') as config_file:
@@ -26,7 +26,7 @@ def init_source_connections(config:dict) -> List[SourceConnector]:
         connector_config = config.get('connectors').get(connector_config_key)
         if connector_config.get('enabled', True):
             connector = subclass_by_parent_find(SourceConnector, connector_config_key)
-            if not connector == None:
+            if connector is not None:
                 available_connections.append(connector(connector_config))
     return available_connections
 
@@ -37,7 +37,7 @@ def init_output_connections(config:dict, filter:str = None) -> List[OutputConnec
         connector_config = config.get('connectors').get(connector_config_key)
         if connector_config.get('enabled', True):
             connector = subclass_by_parent_find(OutputConnector, connector_config_key)
-            if not connector == None:
+            if connector is not None:
                 available_connections.append(connector(connector_config))
     return available_connections
 
@@ -45,7 +45,7 @@ def subclass_by_parent_find(parent_class, search_string:str):
     """This function returns a sub class of a parent class."""
     for connector in parent_class.__subclasses__():
         connector_name = connector.__name__.lower()
-        if search_string in connector_name and not 'mock' in connector_name:
+        if search_string in connector_name and 'mock' not in connector_name:
             return connector 
     return None
 

@@ -1,4 +1,5 @@
-import json, logging
+import json
+import logging
 
 from rich.table import Table
 from rich import print
@@ -22,7 +23,7 @@ class CLIPrinter(OutputConnector):
     def com_host_table(self, hosts:list):
         """This method translates a list of Common OSINT Model results to a rich framework table."""
         table = Table("IP", "First Seen", "Last Seen", "Source", "Domains", show_lines=True)
-        if type(hosts) == Host:
+        if isinstance(hosts, Host):
             hosts = [hosts]
         logger.debug(f"Printing Host Table with {len(hosts)} elements.")
         for host in hosts:
@@ -41,7 +42,8 @@ class JSONPrinter(OutputConnector):
             com_results = self.query_result_to_com_list(query_result)
             self.json(com_results)
         else:
-            if not type(query_result) == list: query_result = [query_result]
+            if not isinstance(query_result, list):
+                query_result = [query_result]
             for query_result_element in query_result:
                 self.json(query_result_element.raw_result, indent=None)
     
@@ -55,13 +57,13 @@ class JSONPrinter(OutputConnector):
             printable = json.dumps(input.flattened_dict, indent=indent)
         elif isinstance(input, list) and isinstance(input[0], Host):
             printable = json.dumps([element.flattened_dict for element in input], indent=indent)
-        elif(type(input) == dict or type(input) == list):
+        elif isinstance(input, dict) or isinstance(input, list):
             printable = json.dumps(input, indent=indent)
         else:
             try:
                 loaded = json.loads(input)
                 printable =  json.dumps(loaded, indent=indent)
-            except ValueError as e:
+            except ValueError:
                 logger.error("Could not print input in JSON format.")
                 printable = ""
         print(printable)

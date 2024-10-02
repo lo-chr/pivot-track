@@ -1,4 +1,5 @@
-import logging, time
+import logging
+import time
 
 from abc import ABC, abstractmethod
 from datetime import datetime
@@ -17,7 +18,7 @@ class SourceConnector(ABC):
         # Get current timestamp
         current_timestamp = int(round(datetime.now().timestamp()) * 1000)
         # Default to 1 Sec Rate Limit if not set
-        rate_limit = self.config['rate_limit'] if self.config['rate_limit'] != None else 1
+        rate_limit = self.config['rate_limit'] if self.config['rate_limit'] is not None else 1
         # Calcuate time between calls
         time_between_calls = int(round((1000 / rate_limit)))
         # Calc Time to Wait
@@ -60,7 +61,7 @@ class OutputConnector(ABC):
     @abstractmethod
     def query_result_to_com_list(self, query_result) -> list:
         result = list()
-        if type(query_result) == list:
+        if isinstance(query_result, list):
             logger.debug(f"List of QueryResult elements identified. Length is {len(query_result)}")
             
             for query_result_element in query_result:

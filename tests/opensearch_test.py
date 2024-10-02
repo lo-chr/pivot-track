@@ -1,7 +1,5 @@
 from  pivot_track.lib.connectors import OpenSearchConnector
-from pathlib import Path
 
-import pytest
 import uuid
 
 class TestOpenSearch:
@@ -14,8 +12,8 @@ class TestOpenSearch:
             'pass' :str(uuid.uuid4())
         }
         opensearch_conn1 = OpenSearchConnector(opensearch_bad_config)
-        assert opensearch_conn1.available == False
+        assert opensearch_conn1.available is False
 
     def test_availability_empty_config(self):
         opensearch_conn2 = OpenSearchConnector(dict())
-        assert opensearch_conn2.available == False
+        assert opensearch_conn2.available is False

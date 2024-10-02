@@ -1,5 +1,4 @@
 from pivot_track.lib.connectors import CensysSourceConnector, ShodanSourceConnector, OpenSearchConnector
-from common_osint_model import Host
 
 # Censys examples based on https://github.com/censys/censys-python/blob/main/tests/search/v2/test_hosts.py
 CENSYS_TEST_HOST = "8.8.8.8"

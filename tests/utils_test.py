@@ -11,16 +11,16 @@ class TestLoadConfig:
         assert str(e.value) == "Pivot Track configuration path only allows Path objects."
 
     def test_path_none(self):
-        with pytest.raises(AttributeError) as e:
+        with pytest.raises(AttributeError):
             utils.load_config(None)
     
     def test_path_not_exist(self):
-        with pytest.raises(FileNotFoundError) as e:
+        with pytest.raises(FileNotFoundError):
             path = Path(Path.cwd() / str(uuid.uuid4()))
             utils.load_config(path)
     
     def test_file_exists_wrong_format(self):
-        assert utils.load_config(Path.cwd() / "README.md") == None
+        assert utils.load_config(Path.cwd() / "README.md") is None
     
     def test_file_exists_right_format(self):
-        assert type(utils.load_config(Path.cwd() / "config" / "config.example.yaml")) == dict
+        assert isinstance(utils.load_config(Path.cwd() / "config" / "config.example.yaml"), dict)

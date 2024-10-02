@@ -1,4 +1,5 @@
-import shodan, logging
+import shodan
+import logging
 
 from .interface import SourceConnector, HostQuery
 

@@ -132,8 +132,8 @@ output: opensearch'''
         assert len(definition.queries_by_source('censys')) == 1
         assert len(definition.queries_by_source('shodan')) == 1
         assert len(definition.queries_by_command('host_generic')) == 2
-        assert type(definition.queries_by_source('censys')) == type(definition.queries)
-        assert type(definition.queries_by_source('censys')) == type(definition.queries)
+        assert type(definition.queries_by_source('censys')) is type(definition.queries)
+        assert type(definition.queries_by_source('censys')) is type(definition.queries)
         assert len(definition.queries_by_filter(command='host_generic', source = 'censys')) == 1
         assert len(definition.queries_by_filter(command='host_generic', source = 'shodan')) == 1
         assert len(definition.queries_by_filter(command='host_generic', source = 'totalvirus')) == 0
@@ -152,7 +152,7 @@ class TestTrackingQuery:
         assert tracking_query1.source == query_dict1['source']
         assert tracking_query1.command == query_dict1['command']
         assert tracking_query1.query == query_dict1['query']
-        assert tracking_query1.expand == False
+        assert tracking_query1.expand is False
 
         query_dict2 = {
             'source' : 'censys',
@@ -164,7 +164,7 @@ class TestTrackingQuery:
         assert tracking_query2.source == query_dict2['source']
         assert tracking_query2.command == query_dict2['command']
         assert tracking_query2.query == query_dict2['query']
-        assert tracking_query2.expand == False
+        assert tracking_query2.expand is False
 
         query_dict3 = {
             'source' : 'censys',
@@ -257,17 +257,17 @@ output: opensearch'''
     
     def test_load_yaml_definitions_wrong_path(self):
         with pytest.raises(AttributeError) as e:
-            definitions = Tracking.load_yaml_definition_files(pathlib.Path(str(uuid4())))
+            Tracking.load_yaml_definition_files(pathlib.Path(str(uuid4())))
         assert "Could not load tracking definitions." in str(e.value)
     
     def test_load_definitions_legacy(self, yaml_load_mocker):
         loaded_definitions, loaded_definition_by_source = Tracking.load_definitions(pathlib.Path("."))
         assert len(loaded_definitions) == 1
-        assert not loaded_definition_by_source.get('shodan') == None
-        assert not loaded_definition_by_source.get('censys') == None
+        assert loaded_definition_by_source.get('shodan') is not None
+        assert loaded_definition_by_source.get('censys') is not None
         assert len(loaded_definition_by_source.get('shodan')) == 1
         assert len(loaded_definition_by_source.get('censys')) == 1
-        assert loaded_definition_by_source.get('test') == None
+        assert loaded_definition_by_source.get('test') is None
 
     def test_execute_tracking_queries(self):
         query_dict1 = {

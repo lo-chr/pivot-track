@@ -4,7 +4,8 @@ from common_osint_model import Host, Domain
 
 from .interface import OutputConnector
 
-import logging, uuid, json
+import logging
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -30,11 +31,11 @@ class OpenSearchConnector(OutputConnector):
             )
             self.opensearch_client.ping()
             # Make sure, that there is some kind of index prefix, at least an empty string
-            if(self.config['index_prefix'] == None):
+            if(self.config['index_prefix'] is None):
                 self.config['index_prefix'] = ''
             self.available = True
-        except KeyError as e:
-            logger.error(f"Could not initialize OpenSearchConnector with wrong configuration.")
+        except KeyError:
+            logger.error("Could not initialize OpenSearchConnector with wrong configuration.")
         except OpenSearchException as e:
             logger.error(f"Failed connecting to OpenSearch instance running on {self.config['host']}:{self.config['port']}. User was {self.config['user']}. OpenSearchException message: {e}")
 
@@ -53,7 +54,7 @@ class OpenSearchConnector(OutputConnector):
                 }
             }
         }
-        if(index_field_properties != None):
+        if(index_field_properties is not None):
             index_mappings['mappings']['properties'].update(index_field_properties)
 
         logger.info(f"Creating Opensearch index {index_name}")
@@ -76,7 +77,8 @@ class OpenSearchConnector(OutputConnector):
             return None
     
     def query_output(self, query_result, raw=False):
-        if not type(query_result) == list: query_result = [query_result]
+        if not isinstance(query_result,list):
+            query_result = [query_result]
         
         for query_result_element in query_result:
             pivottrack_metadata = {
@@ -86,11 +88,11 @@ class OpenSearchConnector(OutputConnector):
 
             if raw:
                 query_result_payload = query_result_element.raw_result
-                if type(query_result_payload) == list and len(query_result_payload) > 1:
+                if isinstance(query_result_payload, list) and len(query_result_payload) > 1:
                     query_result_payload = {
                         'result': query_result_payload
                     }
-                elif type(query_result_payload) == list and len(query_result_payload) == 1:
+                elif isinstance(query_result_payload, list) and len(query_result_payload) == 1:
                     query_result_payload = query_result_payload[0]
 
                 source = query_result_element.source.__name__.lower().removesuffix("sourceconnector")
@@ -188,10 +190,10 @@ class OpenSearchConnector(OutputConnector):
             response = self.opensearch_client.search(body=body, index=index_name, params={'size' : 1})
             logger.info(f"Searching {index_name} successful finished successful with {response['hits']['total']} results.")
             if response['hits']['total']['value'] > 0:
-                logger.debug(f"Tracked item exists in Opensearch Database.")
+                logger.debug("Tracked item exists in Opensearch Database.")
                 return new_elements
             else:
-                logger.debug(f"Tracked item does not exist in Opensearch Database.")
+                logger.debug("Tracked item does not exist in Opensearch Database.")
                 new_elements.append(tracked_item)
                 return new_elements
         except OpenSearchException as e:

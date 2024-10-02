@@ -1,5 +1,6 @@
-import typer, logging, time
-from typing import Tuple
+import typer
+import logging
+import time
 from typing_extensions import Annotated
 from rich.console import Console
 from pathlib import Path
@@ -10,7 +11,7 @@ from .lib.connectors import OpenSearchConnector, SourceConnector, HostQuery
 def init_application(config_path:Path = None) -> dict:
     # We do need a configuration file for now
     # TODO: Rework configuration, so that it also works with ENVIRONMENT Variables
-    if config_path == None:
+    if config_path is None:
         return None
     # Load Config
     config = utils.load_config(config_path)
@@ -51,7 +52,7 @@ def query_host(service:str,
         err_console.print("This combination does not work. CLI output does only work with normalized data handling.")
         exit(-1)
     
-    if config_path == None:
+    if config_path is None:
         err_console.print("Configuration file must not be None.")
         exit(-1)
 
@@ -85,7 +86,7 @@ def query_generic(service:str,
         err_console.print("This combination does not work. CLI output does only work with normalized data handling.")
         exit(-1)
     
-    if config_path == None:
+    if config_path is None:
         err_console.print("Configuration file must not be None.")
         exit(-1)
 
@@ -120,7 +121,7 @@ def automatic_track(
     run_once: Annotated[bool, typer.Option(envvar="PIVOTTRACK_TRACK_RUNONCE")] = False,
     interval: Annotated[int, typer.Option(envvar="PIVOTTRACK_TRACK_INTERVAL")] = 600    # Default to 10 minutes
 ):
-    if config_path == None:
+    if config_path is None:
         err_console.print("Configuration file must not be None.")
         exit(-1)
 
@@ -142,12 +143,12 @@ def automatic_track(
             time.sleep(interval)
         else:
             running = False
-            logger.info(f"Tracking finished.")
+            logger.info("Tracking finished.")
 
 
 @app.command("init-opensearch", help="This command helps you initializing opensearch indicies, required for the '--output opensearch' option.")
 def init_opensearch(config_path: Annotated[str, typer.Option(envvar="PIVOTTRACK_CONFIG")] = None):
-    if config_path == None:
+    if config_path is None:
         err_console.print("Configuration file must not be None.")
         exit(-1)
 
@@ -155,7 +156,7 @@ def init_opensearch(config_path: Annotated[str, typer.Option(envvar="PIVOTTRACK_
     
     opensearch = OpenSearchConnector(config['connectors']['opensearch'])
     for connector in utils.subclasses_by_parent(SourceConnector):
-        if connector.OPENSEARCH_FIELD_PROPERTIES != None:
+        if connector.OPENSEARCH_FIELD_PROPERTIES is not None:
             for index_name, index_field_properties in connector.OPENSEARCH_FIELD_PROPERTIES.items():
                 opensearch.init_pivottrack_query_index(index_name, index_field_properties)
 

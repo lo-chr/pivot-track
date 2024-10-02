@@ -1,5 +1,5 @@
 import pytest
-from .mocks import *
+from .mocks import CENSYS_HOST_JSON, CENSYS_SEARCH_JSON, CENSYS_TEST_HOST, CENSYS_TEST_SEARCH_QUERY, SHODAN_HOST_JSON, SHODAN_SEARCH_JSON, SHODAN_TEST_HOST, SHODAN_TEST_SEARCH_QUERY, MockCensysSourceConnector, MockShodanSourceConnector
 from pivot_track.lib.query import QueryResult, Querying
 from pivot_track.lib.connectors import CensysSourceConnector, ShodanSourceConnector, OpenSearchConnector
 
@@ -98,7 +98,7 @@ class TestQuerying:
     def test_host_shodan(self):
         mock_shodan = MockShodanSourceConnector()
         query_result = Querying.host(host = SHODAN_TEST_HOST, connection = mock_shodan)
-        assert type(query_result) == QueryResult
+        assert isinstance(query_result, QueryResult)
         assert type(query_result.source == ShodanSourceConnector)
         assert query_result.element_count == 1
         assert query_result.com_result.ip == SHODAN_TEST_HOST
@@ -106,15 +106,15 @@ class TestQuerying:
     def test_host_search_shodan(self):
         mock_shodan = MockShodanSourceConnector()
         query_result_pt1, query_result_pt2 = Querying.host_query(search = SHODAN_TEST_SEARCH_QUERY, connection = mock_shodan)
-        assert type(query_result_pt1) == QueryResult
-        assert query_result_pt2 == None
+        assert isinstance(query_result_pt1, QueryResult)
+        assert query_result_pt2 is None
         assert type(query_result_pt1.source == ShodanSourceConnector)
         assert query_result_pt1.element_count == 2
     
     def test_host_censys(self):
         mock_censys = MockCensysSourceConnector()
         query_result_pt1, query_result_pt2 = Querying.host_query(search = CENSYS_TEST_SEARCH_QUERY, connection = mock_censys)
-        assert type(query_result_pt1) == QueryResult
-        assert query_result_pt2 == None
+        assert isinstance(query_result_pt1, QueryResult)
+        assert query_result_pt2 is None
         assert type(query_result_pt1.source == CensysSourceConnector)
         assert query_result_pt1.element_count == 2

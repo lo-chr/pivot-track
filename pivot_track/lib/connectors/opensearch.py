@@ -141,12 +141,15 @@ class OpenSearchConnector(OutputConnector):
             "title": definition.title,
             "uuid": definition.uuid,
             "status": definition.status,
-            "created": definition.created,
-            "modified": definition.modified,
+            "created": definition.created.strftime("%Y/%m/%d"),
+            "modified": definition.modified.strftime("%Y/%m/%d"),
             "tags": definition.tags,
         }
 
         com_list = self.query_result_to_com_list(query_result)
+        logger.info(
+                    f'Preparing OpenSearch tracking output. Got {len(com_list)} COM objects for "{str(definition.uuid)}".'
+        )
         for com_result_element in com_list:
             # TODO this is a little hacky right now, but otherwise it's hard to get this data into opensearch...
             com_result_element.services = []

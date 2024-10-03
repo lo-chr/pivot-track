@@ -191,6 +191,9 @@ class Tracking:
                 collected_results = Tracking.execute_tracking_queries(
                     host_searches, source_connection, opensearch_connection
                 )
+                logger.info(
+                    f'Got {len(collected_results)} for definition "{str(definition.uuid)}".'
+                )
                 new_items = opensearch_connection.tracking_output(
                     query_result=collected_results, definition=definition
                 )

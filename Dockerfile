@@ -8,6 +8,6 @@ COPY pyproject.toml poetry.lock ./
 COPY pivot_track ./pivot_track
 RUN touch README.md
 
-RUN poetry install
+RUN poetry install --without test
 
 ENTRYPOINT ["poetry", "run", "pivottrack", "track"]

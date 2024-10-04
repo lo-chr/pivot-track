@@ -20,7 +20,6 @@ def load_config(path: Path = None) -> Dict[str, Dict]:
             return None
 
 
-# TODO reduce code duplication
 def init_source_connections(config: dict, filter: str = "") -> List[SourceConnector]:
     available_connections = _init_typed_connections(
         config, SourceConnector, filter=filter
@@ -28,7 +27,6 @@ def init_source_connections(config: dict, filter: str = "") -> List[SourceConnec
     return available_connections
 
 
-# TODO reduce code duplication
 def init_output_connections(config: dict, filter: str = "") -> List[OutputConnector]:
     available_connections = _init_typed_connections(config, OutputConnector)
     return available_connections

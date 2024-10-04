@@ -43,31 +43,73 @@ class OpenSearchConnector(OutputConnector):
                 f"Failed connecting to OpenSearch instance running on {self.config['host']}:{self.config['port']}. User was {self.config['user']}. OpenSearchException message: {e}"
             )
 
-    # TODO Create function for index settings (i.E. max_docvalue_fields_search)
     def init_pivottrack_query_index(
-        self, index_name: str, index_field_properties: dict = None
+        self, index_name: str, index_field_properties: dict
     ):
+        assert index_field_properties is not None
         index_name = f"{self.config['index_prefix']}{index_name}"
-        index_mappings = {
+        index_settings = {
             "mappings": {
                 "properties": {
                     "pivottrack.query_timestamp": {"type": "date"},
                     "pivottrack.query_string": {"type": "keyword"},
                 }
-            }
+            },
+            "settings": {"index.max_docvalue_fields_search": 200},
         }
         if index_field_properties is not None:
-            index_mappings["mappings"]["properties"].update(index_field_properties)
+            index_settings["mappings"]["properties"].update(index_field_properties)
 
+        self._init_pivottrack_index(
+            index_name=index_name, index_settings=index_settings
+        )
+
+    def init_pivottrack_tracking_index(self):
+        index_name = f"{self.config['index_prefix']}tracking-hosts"
+        index_settings = {
+            "mappings": {
+                "properties": {
+                    "autonomous_system.country": {"type": "keyword"},
+                    "autonomous_system.name": {"type": "keyword"},
+                    "autonomous_system.number": {"type": "long"},
+                    "autonomous_system.prefix": {"type": "keyword"},
+                    "autonomous_system.source": {"type": "keyword"},
+                    "domains.domain": {"type": "keyword"},
+                    "domains.first_seen": {"type": "date_nanos"},
+                    "domains.last_seen": {"type": "date_nanos"},
+                    "domains.source": {"type": "keyword"},
+                    "domains.type": {"type": "keyword"},
+                    "first_seen": {"type": "date_nanos"},
+                    "ip": {"type": "ip"},
+                    "last_seen": {"type": "date_nanos"},
+                    "ports": {"type": "integer"},
+                    "pt_meta.tracking_reference": {"type": "keyword"},
+                    "pt_meta.tracking_timestamp": {"type": "date_nanos"},
+                    "pt_tracking_definition.created": {"type": "date"},
+                    "pt_tracking_definition.modified": {"type": "date"},
+                    "pt_tracking_definition.status": {"type": "keyword"},
+                    "pt_tracking_definition.tags": {"type": "keyword"},
+                    "pt_tracking_definition.title": {"type": "keyword"},
+                    "pt_tracking_definition.uuid": {"type": "keyword"},
+                    "source": {"type": "keyword"},
+                }
+            }
+        }
+
+        self._init_pivottrack_index(
+            index_name=index_name, index_settings=index_settings
+        )
+
+    def _init_pivottrack_index(self, index_name: str, index_settings: dict):
         logger.info(f"Creating Opensearch index {index_name}")
         if not self.opensearch_client.indices.exists(index=index_name):
             response = self.opensearch_client.indices.create(
-                index=index_name, body=index_mappings
+                index=index_name, body=index_settings
             )
             logger.debug(f"Creation of Opensearch index {index_name} successful.")
             return response
         else:
-            logger.info(f"Opensearch index {index_name} did already exist.")
+            logger.info(f"Opensearch index {index_name} does already exist.")
             return None
 
     def index_document(self, document: dict, index: str):
@@ -141,8 +183,8 @@ class OpenSearchConnector(OutputConnector):
             "title": definition.title,
             "uuid": definition.uuid,
             "status": definition.status,
-            "created": definition.created.strftime("%Y/%m/%d"),
-            "modified": definition.modified.strftime("%Y/%m/%d"),
+            "created": definition.created,
+            "modified": definition.modified,
             "tags": definition.tags,
         }
 

@@ -177,6 +177,7 @@ def automatic_track(
     output_connections = utils.init_output_connections(config)[0]
     notification_connection = FileConnector(Path(config.get("tracking_file")))
 
+    init_opensearch(config_path)
     running = True
 
     while running:
@@ -221,6 +222,7 @@ def init_opensearch(
                 opensearch.init_pivottrack_query_index(
                     index_name, index_field_properties
                 )
+    opensearch.init_pivottrack_tracking_index()
 
 
 if __name__ == "__main__":

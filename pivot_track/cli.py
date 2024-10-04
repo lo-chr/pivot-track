@@ -16,14 +16,7 @@ from pivot_track.lib.connectors import (
 )
 
 
-def init_application(config_path: Path = None) -> dict:
-    # We do need a configuration file for now
-    # TODO: Rework configuration, so that it also works with ENVIRONMENT Variables
-    if config_path is None:
-        return None
-    # Load Config
-    config = utils.load_config(config_path)
-
+def init_logging(config) -> dict:
     # We have to reset logging
     logging.root.handlers = []
 
@@ -37,8 +30,6 @@ def init_application(config_path: Path = None) -> dict:
         handlers=basic_config_handlers,
         format="%(asctime)s %(name)s %(levelname)s %(message)s",
     )
-
-    return config
 
 
 # Create Typer App
@@ -76,15 +67,20 @@ def query_host(
         err_console.print("Configuration file must not be None.")
         exit(-1)
 
-    config = init_application(Path(config_path))
-    # TODO use util.init_source_connection()
-    source_connector = utils.subclass_by_parent_find(HostQuery, search_string=service)
-    connection_config = config["connectors"][
-        source_connector.__name__.lower().removesuffix("sourceconnector")
-    ]
+    config = utils.load_config(Path(config_path))
+    
+    init_logging(config)
+
+    # Find source connection and setup for query
+    source_connections = utils.init_source_connections(config, filter=service)
+    if(not len(source_connections) == 1):
+        err_console.print(f'Source "{service}" is not available.')
+        exit(-1)
+    service_connection = source_connections[0]
+
     try:
         host_query_result = Querying.host(
-            host=host, connection=source_connector(connection_config)
+            host=host, connection=service_connection
         )
         Querying.output(
             config=config, query_result=host_query_result, output_format=output, raw=raw
@@ -118,14 +114,19 @@ def query_generic(
         err_console.print("Configuration file must not be None.")
         exit(-1)
 
-    config = init_application(Path(config_path))
-    source_connector = utils.subclass_by_parent_find(HostQuery, search_string=service)
-    connection_config = config["connectors"][
-        source_connector.__name__.lower().removesuffix("sourceconnector")
-    ]
+    config = utils.load_config(Path(config_path))
+    init_logging(config)
+    
+    # Find source connection and setup for query
+    source_connections = utils.init_source_connections(config, filter=service)
+    if(not len(source_connections) == 1):
+        err_console.print(f'Source "{service}" is not available.')
+        exit(-1)
+    service_connection = source_connections[0]
+
     try:
         generic_query_result, expanded_query_result = Querying.host_query(
-            search=search, connection=source_connector(connection_config), expand=expand
+            search=search, connection=service_connection, expand=expand
         )
         if not expand:
             Querying.output(
@@ -167,7 +168,8 @@ def automatic_track(
         err_console.print("Configuration file must not be None.")
         exit(-1)
 
-    config = init_application(Path(config_path))
+    config = utils.load_config(Path(config_path))
+    init_logging(config)
     logger = logging.getLogger(__name__)
     logger.info(
         f'Starting automatic tracking service with config file "{config_path}" and tracking definitions "{definition_path}".'
@@ -209,7 +211,8 @@ def init_opensearch(
         err_console.print("Configuration file must not be None.")
         exit(-1)
 
-    config = init_application(Path(config_path))
+    config = utils.load_config(Path(config_path))
+    init_logging(config)
 
     opensearch = OpenSearchConnector(config["connectors"]["opensearch"])
     for connector in utils.subclasses_by_parent(SourceConnector):

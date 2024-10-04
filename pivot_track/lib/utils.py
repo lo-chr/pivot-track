@@ -21,14 +21,16 @@ def load_config(path: Path = None) -> Dict[str, Dict]:
 
 
 # TODO reduce code duplication
-def init_source_connections(config: dict) -> List[SourceConnector]:
+def init_source_connections(config: dict, filter:str="") -> List[SourceConnector]:
     available_connections = list()
     for connector_config_key in config.get("connectors", dict()).keys():
         connector_config = config.get("connectors").get(connector_config_key)
         if connector_config.get("enabled", True):
             connector = subclass_by_parent_find(SourceConnector, connector_config_key)
             if connector is not None:
-                available_connections.append(connector(connector_config))
+                connection = connector(connector_config)
+                if filter.lower() in connection.short_name:
+                    available_connections.append(connection)
     return available_connections
 
 

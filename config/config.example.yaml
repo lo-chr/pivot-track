@@ -15,6 +15,7 @@ connectors:
     api_id: "CHANGEME"
     api_secret: "CHANGEME"
     rate_limit: 1     # API request per second
+    enabled: False
   opensearch:
     host: "CHANGEME"
     port: 9200

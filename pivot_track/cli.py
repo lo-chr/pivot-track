@@ -11,7 +11,6 @@ from pivot_track.lib.query import Querying
 from pivot_track.lib.connectors import (
     OpenSearchConnector,
     SourceConnector,
-    HostQuery,
     FileConnector,
 )
 
@@ -68,20 +67,18 @@ def query_host(
         exit(-1)
 
     config = utils.load_config(Path(config_path))
-    
+
     init_logging(config)
 
     # Find source connection and setup for query
     source_connections = utils.init_source_connections(config, filter=service)
-    if(not len(source_connections) == 1):
+    if not len(source_connections) == 1:
         err_console.print(f'Source "{service}" is not available.')
         exit(-1)
     service_connection = source_connections[0]
 
     try:
-        host_query_result = Querying.host(
-            host=host, connection=service_connection
-        )
+        host_query_result = Querying.host(host=host, connection=service_connection)
         Querying.output(
             config=config, query_result=host_query_result, output_format=output, raw=raw
         )
@@ -116,10 +113,10 @@ def query_generic(
 
     config = utils.load_config(Path(config_path))
     init_logging(config)
-    
+
     # Find source connection and setup for query
     source_connections = utils.init_source_connections(config, filter=service)
-    if(not len(source_connections) == 1):
+    if not len(source_connections) == 1:
         err_console.print(f'Source "{service}" is not available.')
         exit(-1)
     service_connection = source_connections[0]

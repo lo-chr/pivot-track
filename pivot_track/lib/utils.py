@@ -21,28 +21,31 @@ def load_config(path: Path = None) -> Dict[str, Dict]:
 
 
 # TODO reduce code duplication
-def init_source_connections(config: dict, filter:str="") -> List[SourceConnector]:
-    available_connections = list()
-    for connector_config_key in config.get("connectors", dict()).keys():
-        connector_config = config.get("connectors").get(connector_config_key)
-        if connector_config.get("enabled", True):
-            connector = subclass_by_parent_find(SourceConnector, connector_config_key)
-            if connector is not None:
-                connection = connector(connector_config)
-                if filter.lower() in connection.short_name:
-                    available_connections.append(connection)
+def init_source_connections(config: dict, filter: str = "") -> List[SourceConnector]:
+    available_connections = _init_typed_connections(
+        config, SourceConnector, filter=filter
+    )
     return available_connections
 
 
 # TODO reduce code duplication
-def init_output_connections(config: dict, filter: str = None) -> List[OutputConnector]:
+def init_output_connections(config: dict, filter: str = "") -> List[OutputConnector]:
+    available_connections = _init_typed_connections(config, OutputConnector)
+    return available_connections
+
+
+def _init_typed_connections(config: dict, parent_class, filter: str = "") -> List:
     available_connections = list()
-    for connector_config_key in config.get("connectors", dict()).keys():
+    connector_config_keys = config.get("connectors", dict()).keys()
+    if not filter == "" and filter in connector_config_keys:
+        connector_config_keys = [filter]
+    for connector_config_key in connector_config_keys:
         connector_config = config.get("connectors").get(connector_config_key)
         if connector_config.get("enabled", True):
-            connector = subclass_by_parent_find(OutputConnector, connector_config_key)
+            connector = subclass_by_parent_find(parent_class, connector_config_key)
             if connector is not None:
-                available_connections.append(connector(connector_config))
+                connection = connector(connector_config)
+                available_connections.append(connection)
     return available_connections
 
 

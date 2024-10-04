@@ -1,0 +1,20 @@
+title: Default cobaltstrike servers
+uuid: af8bda70-0714-4ecd-a275-7dcabaac2bf9
+status: test
+description: This query adresses searches for Cobaltstrike servers in default configuration
+author: Christoph Lobmeyer
+created: 2024/09/04
+modified: 2024/09/04
+tags:
+  - tlp.white
+  - cobaltstrike
+query:
+  - source: censys
+    command: host_generic
+    query: services.tls.certificate.parsed.serial_number:146473198
+    expand: False
+  - source: shodan
+    command: host_generic
+    query: ssl.cert.serial:146473198
+    expand: False
+output: opensearch

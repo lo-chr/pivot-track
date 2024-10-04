@@ -149,7 +149,7 @@ def query_generic(
 
 @app.command(
     "track",
-    help="This command runs pivottrack in non-interactive mode, to execute queries automatically.",
+    help="This command runs Pivot Track in non-interactive mode, to execute queries automatically.",
 )
 def automatic_track(
     config_path: Annotated[str, typer.Option(envvar="PIVOTTRACK_CONFIG")] = None,

@@ -1,13 +1,15 @@
 # Pivot Track
-Pivot Track is a CLI tool and library that helps TI analysts to pivot on IoCs and to track their research results.
-
-Right now Pivot Track is focussed on infrastructure tracking. It uses [Nils Kuhnert's "Common OSINT Model"](https://github.com/3c7/common-osint-model) for a common representation of several OSINT source results.
+**Pivot Track is a CLI tool and library that helps Threat Intelligence analysts to pivot on IoCs and to track their research results.**
+Right now, Pivot Track is focussed on infrastructure tracking. It uses [Nils Kuhnert's "Common OSINT Model"](https://github.com/3c7/common-osint-model) for a common representation of several OSINT source results.
 
 The current feature set of PivotTrack is:
 - **Query Sources:** Use Pivot Track to interact with different OSINT sources (for now Censys and Shodan)
 - **Store Results:** Store the results of your queries, so that you do not have to repeat them all the time
 - **Track Infrastructure:** Run Querys at a pre-defined interval and store results to a predefined output (for now OpenSearch)
-- **Get Notified:** Get notification for new found infrastructure (for now in a file)
+- **Get Notifications:** Get notifications for newly found infrastructure (for now in a file)
+
+> [!NOTE]  
+> Pivot Track is still work in progress and has been implemented during my personal experiments with automation of OSINT research.
 
 ## Usage
 
@@ -91,7 +93,7 @@ A "generic" search is a search, that uses the query language of a given OSINT so
 ```
  Usage: pivottrack track [OPTIONS]
 
- This command runs pivottrack in non-interactive mode, to execute queries
+ This command runs Pivot Track in non-interactive mode, to execute queries
  automatically.
 
 ╭─ Options ──────────────────────────────────────────────────────────────────────────╮
@@ -108,4 +110,4 @@ A "generic" search is a search, that uses the query language of a given OSINT so
 │ --help                                         Show this message and exit.         │
 ╰────────────────────────────────────────────────────────────────────────────────────╯
 ```
-The definitions, used for automatic tracking have to follow a certain format. A example of such a file will follow very soon.
+The definitions, used for automatic tracking, have to follow a certain format. An example of such a file will follow very soon.

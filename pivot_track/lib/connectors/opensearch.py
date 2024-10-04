@@ -148,7 +148,7 @@ class OpenSearchConnector(OutputConnector):
 
         com_list = self.query_result_to_com_list(query_result)
         logger.info(
-                    f'Preparing OpenSearch tracking output. Got {len(com_list)} COM objects for "{str(definition.uuid)}".'
+            f'Preparing OpenSearch tracking output. Got {len(com_list)} COM objects for "{str(definition.uuid)}".'
         )
         for com_result_element in com_list:
             # TODO this is a little hacky right now, but otherwise it's hard to get this data into opensearch...
@@ -159,7 +159,7 @@ class OpenSearchConnector(OutputConnector):
                 pivottrack_tracking_definition
             )
             index_name = f"{self.config['index_prefix']}tracking-hosts"
-
+            # TODO decouple identification of new elements and storage (maybe return uuid?)
             new_elements.extend(
                 self.tracking_get_new_elements(com_result_element, definition)
             )

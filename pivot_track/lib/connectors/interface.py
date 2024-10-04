@@ -2,7 +2,10 @@ import logging
 import time
 
 from abc import ABC, abstractmethod
+from typing import List, Union
 from datetime import datetime
+
+from common_osint_model import Host, Domain
 
 logger = logging.getLogger(__name__)
 
@@ -88,3 +91,9 @@ class OutputConnector(ABC):
                 else [query_result.com_result]
             )
         return result
+
+
+class NotificationConnector(ABC):
+    @abstractmethod
+    def notify(definition=None, notify_items: List[Union[Host, Domain]] = None):
+        raise NotImplementedError

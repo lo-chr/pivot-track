@@ -5,13 +5,13 @@ from pathlib import Path
 from pydantic import BaseModel, ValidationError
 from typing import Optional, List, Literal
 from uuid import UUID
-from common_osint_model import Domain, Host
 
-from . import query
+from pivot_track.lib.query import Querying, QueryResult
 from pivot_track.lib.connectors import (
     SourceConnector,
     OpenSearchConnector,
     OutputConnector,
+    NotificationConnector,
 )
 
 logger = logging.getLogger(__name__)
@@ -153,6 +153,7 @@ class Tracking:
         definitions: List[TrackingDefinition],
         source_connections: List[SourceConnector],
         output_connection: OutputConnector,
+        notification_connection: NotificationConnector = None,
     ):
         """The function executes all definitions via the provided connections to sources. The results will be  stored via the provided output connector."""
         for source_connection in source_connections:
@@ -166,12 +167,14 @@ class Tracking:
                 source_connection=source_connection,
                 definitions=definitions_for_source,
                 output_connection=output_connection,
+                notification_connection=notification_connection,
             )
 
     def track_definitions_for_source(
         definitions: List[TrackingDefinition],
         source_connection: SourceConnector,
         output_connection: OutputConnector,
+        notification_connection: NotificationConnector = None,
     ):
         """The function executes all queries for one specific source (i.E. Shodan or Censys)."""
         opensearch_connection = output_connection
@@ -197,7 +200,10 @@ class Tracking:
                 new_items = opensearch_connection.tracking_output(
                     query_result=collected_results, definition=definition
                 )
-                Tracking.notify_callback(definition, new_items)
+                if notification_connection is not None:
+                    notification_connection.notify(
+                        definition=definition, notify_items=new_items
+                    )
         else:
             logger.error(
                 "OpenSearchConnector is not available. OpenSearch is required for this feature."
@@ -207,11 +213,11 @@ class Tracking:
         queries: List[TrackingQuery],
         source_connection: SourceConnector,
         output_connection: OpenSearchConnector = None,
-    ):
+    ) -> List[QueryResult]:
         """The function is responible for executing a given TrackingQuery on a given source_connection."""
         collected_results = list()
         for query_element in queries:
-            query_result, expanded_query_result = query.Querying.host_query(
+            query_result, expanded_query_result = Querying.host_query(
                 search=query_element.query,
                 connection=source_connection,
                 expand=query_element.expand,
@@ -289,32 +295,3 @@ class Tracking:
             f'{len(result_definitions)} tracking definition(s) available for source "{source}".'
         )
         return result_definitions
-
-    def create_notify_strings(new_elements: list) -> list:
-        """This function transfers a set of Common OSINT Model items to a list of identifiable strings (hostnames and IPs for now)."""
-        notify_strings = list()
-        for element in new_elements:
-            if isinstance(element, Host):
-                notify_strings.append(element.ip)
-            elif isinstance(element, Domain):
-                notify_strings.append(element.domain)
-        return notify_strings
-
-    def notify_for_new_elements(notification: str, config: dict):
-        """This function handles the notification for new events. For now it just stores them in a given file."""
-        tracking_file_path = Path(config["tracking_file"])
-        try:
-            with open(tracking_file_path, "a") as out_file:
-                out_file.write(f"{notification}\n\n")
-        except FileNotFoundError:
-            logger.error(
-                f"Could not find notification output: {tracking_file_path.absolute().as_posix()}"
-            )
-
-    # TODO Change to proper callback system for notification
-    def notify_callback(definition: TrackingDefinition, new_items: List[Host]):
-        logger.debug(f'Got {len(new_items)} for last run of  "{str(definition.uuid)}".')
-        if len(new_items) > 0:
-            logger.info(f"Appending notification for {len(new_items)} items.")
-            notification = f"🚨🚨🚨 Tracking Results for \"{definition.title}\" ({str(definition.uuid)}):\n{'\n'.join([notify_string for notify_string in Tracking.create_notify_strings(new_items)])}"
-            print(notification)

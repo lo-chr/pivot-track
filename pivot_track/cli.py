@@ -6,8 +6,14 @@ from rich.console import Console
 from pathlib import Path
 
 from pivot_track.lib import utils
-from pivot_track.lib import Tracking, Querying
-from pivot_track.lib.connectors import OpenSearchConnector, SourceConnector, HostQuery
+from pivot_track.lib.track import Tracking
+from pivot_track.lib.query import Querying
+from pivot_track.lib.connectors import (
+    OpenSearchConnector,
+    SourceConnector,
+    HostQuery,
+    FileConnector,
+)
 
 
 def init_application(config_path: Path = None) -> dict:
@@ -170,6 +176,7 @@ def automatic_track(
     source_connections = utils.init_source_connections(config)
     # For now we assume, that there is just one output connection (OpenSearch), this will change soon
     output_connections = utils.init_output_connections(config)[0]
+    notification_connection = FileConnector(Path(config.get("tracking_file")))
 
     running = True
 
@@ -179,6 +186,7 @@ def automatic_track(
             definitions=definitions,
             source_connections=source_connections,
             output_connection=output_connections,
+            notification_connection=notification_connection,
         )
         if not run_once:
             logger.info(

@@ -110,4 +110,17 @@ A "generic" search is a search, that uses the query language of a given OSINT so
 │ --help                                         Show this message and exit.         │
 ╰────────────────────────────────────────────────────────────────────────────────────╯
 ```
-The definitions, used for automatic tracking, have to follow a certain format. An example of such a file will follow very soon.
+The definitions, used for automatic tracking, have to follow a certain format. You can find an example [here](https://github.com/lo-chr/pivot-track/blob/main/example/tracking-cobaltstrike.example.yml).
+
+## Setup
+### Setup for CLI
+> [!IMPORTANT]  
+> This setup guide does not cover the [OpenSearch setup](https://opensearch.org/docs/latest/install-and-configure/install-opensearch/index/).
+> Providing valid OpenSearch settings is required for using the `track` command and for the `opensearch` output of `query`.
+1. Create folder for setup: `mkdir pivottrack && cd pivottrack`
+1. Clone this repository: `git clone https://github.com/lo-chr/pivot-track.git`
+1. Copy example configuration file: `cp pivot-track/example/config.example.yaml config.cli.yaml`
+1. Change settings in configuration: Provide required API keys for OSINT services. You can disable connectors with `enabled: False` (see Censys connector configuration in example file)
+1. Install CLI application: `pipx install https://github.com/lo-chr/pivot-track` (If you get warnings by pipx, you have to solve them)
+1. Set `PIVOTTRACK_CONFIG` environment variable: `export PIVOTTRACK_CONFIG="$(pwd)/config.cli.yaml"`
+1. Use Pivot Track, Example: `pivottrack query host shodan 1.1.1.1`

@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 class RabbitMQConnector(OutputConnector):
     rabbitmq_client = None
     config = None
-    # TODO: Implement as parameter method
 
     def __init__(self, config):
         logger.debug("Initializing RabbitMQ for connection")
@@ -36,7 +35,7 @@ class RabbitMQConnector(OutputConnector):
             logger.error("Error during RabbitMQ connection setup.")
 
     def close(self):
-        logger.info("Closing RabbitMQ connection")
+        logger.debug("Closing RabbitMQ connection")
         self.rabbitmq_client.close()
 
     @property

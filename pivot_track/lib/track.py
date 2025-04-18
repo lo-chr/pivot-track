@@ -169,7 +169,7 @@ class TrackingService:
         self.config = config
         self.queue_connector = RabbitMQConnector(config["connectors"]["rabbitmq"])
         self.queue_connector.connect()
-        # Make sure that task queue existis
+        # Ensure Make sure that task queue exists
         queue_channel = self.queue_connector.rabbitmq_client.channel()
         queue_channel.queue_declare("pivottrack-definition-tasks", durable=True)
         queue_channel.close()
@@ -180,7 +180,7 @@ class TrackingService:
         definitions = Tracking.load_yaml_definition_files(definition_path)
         self.queue_connector.connect()
         queue_channel = self.queue_connector.rabbitmq_client.channel()
-        logger.debug(f"Producing {len(definitions)} tasks.")
+        logger.info(f"Producing {len(definitions)} tasks.")
         for definition in definitions:
             logger.debug(f"Producing task for definition {definition.uuid}")
             queue_channel.basic_publish(
@@ -198,8 +198,8 @@ class TrackingService:
         self.queue_connector.close()
 
     def subscribe_tasks(self):
-        # TODO: Print available connections in the beginning
         source_connections = utils.init_source_connections(self.config)
+        logger.info(f"Available SourceConnections are {','.join([source_connection.short_name for source_connection in source_connections])}")
         output_connections = RabbitMQConnector(self.config["connectors"]["rabbitmq"])
         output_connections.setup_result_channel()
 
@@ -230,7 +230,6 @@ class Tracking:
     the automatic execution and storing of queries against several sources, storing the results
     and providing notifications for newly found items."""
 
-    # TODO: Make execution logic easier (less cluttered)
     def run_definitions(
         definitions: List[TrackingDefinition],
         source_connections: List[SourceConnector],
@@ -302,9 +301,9 @@ class Tracking:
         tracking_result.query_results = Tracking.execute_tracking_queries(
             host_searches, source_connection
         )
-        # TODO: Check for correct counting
+        total_element_count = sum([query_result.element_count for query_result in tracking_result.query_results])
         logger.info(
-            f'Got {len(tracking_result.query_results)} for definition "{str(tracking_result.definition.uuid)}".'
+            f'Got {total_element_count} for definition {str(tracking_result.definition.uuid)}.'
         )
         output_connection.definition_track_output(tracking_result)
         return TrackingResult

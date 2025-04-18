@@ -25,6 +25,8 @@ def init_logging(config) -> dict:
         handlers=basic_config_handlers,
         format="%(asctime)s %(name)s %(levelname)s %(message)s",
     )
+    # Make Pika Logging less noisier
+    logging.getLogger("pika").setLevel(logging.WARNING)
 
 
 # Create Typer App
@@ -37,7 +39,7 @@ query_app = typer.Typer(
     pretty_exceptions_show_locals=False,
 )
 service_app = typer.Typer(
-    help="For the service",
+    help="This module provides capabilities for running tracking definitions automatically.",
     pretty_exceptions_show_locals=False,
 )
 app.add_typer(query_app, name="query")
@@ -150,7 +152,7 @@ def query_generic(
 
 @service_app.command(
     "publish-definitions",
-    help="Publish definitions to Task Queue.",
+    help="Search for definitions and publish them to task queue.",
 )
 def publish_definitions(
     config_path: Annotated[str, typer.Option(envvar="PIVOTTRACK_CONFIG")] = None,
@@ -190,7 +192,7 @@ def publish_definitions(
 
 @service_app.command(
     "subscribe-definitions",
-    help="Consume tracking definitions from RabbitMQ task queue and execute them.",
+    help="Consume tracking definitions from task queue and execute them.",
 )
 def subscribe_definitions(
     config_path: Annotated[str, typer.Option(envvar="PIVOTTRACK_CONFIG")] = None,

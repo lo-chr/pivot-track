@@ -1,6 +1,8 @@
 # Pivot Track
 **Pivot Track is a CLI tool and library that helps Threat Intelligence analysts to pivot on IoCs and to track their research results.**
-Right now, Pivot Track is focussed on infrastructure tracking. It uses [Nils Kuhnert's "Common OSINT Model"](https://github.com/3c7/common-osint-model) for a common representation of several OSINT source results.
+Right now, Pivot Track is focussed on infrastructure tracking.
+
+It uses [Nils Kuhnert's "Common OSINT Model"](https://github.com/3c7/common-osint-model) for a common representation of several OSINT source results. Also, the automatic tracking module uses the security data pipeline engine [Tenzir](https://github.com/tenzir/tenzir) to showcase options for further processing.
 
 The current feature set of PivotTrack is:
 - **Query Sources:** Use Pivot Track to interact with different OSINT sources (for now Censys and Shodan)

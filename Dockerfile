@@ -10,4 +10,4 @@ RUN touch README.md
 
 RUN poetry install --without test
 
-ENTRYPOINT ["poetry", "run", "pivottrack", "track"]
+ENTRYPOINT ["poetry", "run", "pivottrack", "service", "--help"]

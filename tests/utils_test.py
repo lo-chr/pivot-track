@@ -27,5 +27,5 @@ class TestLoadConfig:
 
     def test_file_exists_right_format(self):
         assert isinstance(
-            utils.load_config(Path.cwd() / "config" / "config.example.yaml"), dict
+            utils.load_config(Path.cwd() / "example" / "config.example.yaml"), dict
         )

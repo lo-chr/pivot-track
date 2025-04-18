@@ -15,7 +15,7 @@ from pivot_track.lib.query import QueryResult, Querying
 from pivot_track.lib.connectors import (
     CensysSourceConnector,
     ShodanSourceConnector,
-    OpenSearchConnector,
+    RabbitMQConnector,
 )
 
 
@@ -163,7 +163,7 @@ class TestQuerying:
 
     def test_host_wrong_connector_class(self):
         with pytest.raises(NotImplementedError) as e:
-            Querying.host(host="1.2.4.4", connection=OpenSearchConnector)
+            Querying.host(host="1.2.4.4", connection=RabbitMQConnector)
         assert str(e.value) == "Did not find HostQuery connector."
 
     def test_host_search_none_connector(self):
@@ -173,7 +173,7 @@ class TestQuerying:
 
     def test_host__search_wrong_connector_class(self):
         with pytest.raises(NotImplementedError) as e:
-            Querying.host_query(search="blakeks", connection=OpenSearchConnector)
+            Querying.host_query(search="blakeks", connection=RabbitMQConnector)
         assert str(e.value) == "Did not find HostQuery connector."
 
     def test_host_shodan(self):

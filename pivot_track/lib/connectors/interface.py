@@ -13,8 +13,6 @@ logger = logging.getLogger(__name__)
 class SourceConnector(ABC):
     """Abstract class, providing shared connector capabilities"""
 
-    OPENSEARCH_FIELD_PROPERTIES = None
-
     @abstractmethod
     def _api_throttle(self):
         """Function to throttle API consumption (through waiting)."""
@@ -67,30 +65,12 @@ class OutputConnector(ABC):
     It is optimized for printing (or storing) data, based on Query results."""
 
     @abstractmethod
-    def query_output(self, query_result, raw=False):
+    def query_output(self, query_result, raw: bool = False):
         raise NotImplementedError
 
     @abstractmethod
-    def query_result_to_com_list(self, query_result) -> list:
-        result = list()
-        if isinstance(query_result, list):
-            logger.debug(
-                f"List of QueryResult elements identified. Length is {len(query_result)}"
-            )
-
-            for query_result_element in query_result:
-                if query_result_element.is_collection:
-                    logger.debug("query_result_element is collection.")
-                    result.extend(query_result_element.com_result)
-                else:
-                    result.append(query_result_element.com_result)
-        else:
-            result = (
-                query_result.com_result
-                if query_result.is_collection
-                else [query_result.com_result]
-            )
-        return result
+    def definition_track_output(self, query_result):
+        raise NotImplementedError
 
 
 class NotificationConnector(ABC):

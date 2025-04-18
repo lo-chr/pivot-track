@@ -17,4 +17,3 @@ query:
     command: host_generic
     query: ssl.cert.serial:146473198
     expand: False
-output: opensearch

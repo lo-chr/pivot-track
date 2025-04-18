@@ -5,22 +5,22 @@ from .connectors import (
     ShodanSourceConnector,
     CensysSourceConnector,
     SourceConnector,
-    OpenSearchConnector,
     CLIPrinter,
     JSONPrinter,
 )
 from common_osint_model import Host
+from pydantic import BaseModel
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 
-class QueryResult:
-    def __init__(
-        self, raw_query_result=None, query_command: str = "", search_term: str = ""
-    ):
-        self.raw_result = raw_query_result
-        self.query_command = query_command
-        self.search_term = search_term
+# TODO: At some point it might be helpful, to introduce a mapping between run, definition and even the corresponding query
+# TODO: Merge hosts together (right now, every finding returns a seperate "Host", even if is part of the same system)
+class QueryResult(BaseModel):
+    raw_query_result: Optional[dict] | Optional[list] = None
+    query_command: Optional[str] = ""
+    search_term: Optional[str] = ""
 
     @property
     def com_result(self) -> Host | list[Host]:
@@ -28,21 +28,22 @@ class QueryResult:
         if self.source is ShodanSourceConnector:
             logger.debug("Trying to convert raw Shodan result to Common OSINT Model.")
             return (
-                Host.from_shodan(self.raw_result)
+                Host.from_shodan(self.raw_query_result)
                 if not self.is_collection
                 else [
-                    Host.from_shodan(element) for element in self.raw_result["matches"]
+                    Host.from_shodan(element)
+                    for element in self.raw_query_result["matches"]
                 ]
             )
         elif self.source is CensysSourceConnector:
             logger.debug("Trying to convert raw Censys result to Common OSINT Model")
             return (
-                Host.from_censys(self.raw_result)
+                Host.from_censys(self.raw_query_result)
                 if not self.is_collection
-                else [Host.from_censys(element) for element in self.raw_result]
+                else [Host.from_censys(element) for element in self.raw_query_result]
             )
         else:
-            logger.warn(
+            logger.warning(
                 f"No Common OSINT Model translation available for {self.source.__name__}. Raising NotImplementedError Exception."
             )
             raise NotImplementedError
@@ -50,38 +51,38 @@ class QueryResult:
     @property
     def source(self) -> SourceConnector:
         # Cases for single host query
-        if isinstance(self.raw_result, dict):
+        if isinstance(self.raw_query_result, dict):
             if (
-                "data" in self.raw_result.keys()
-                and len(self.raw_result["data"]) > 0
-                and "_shodan" in self.raw_result["data"][0].keys()
+                "data" in self.raw_query_result.keys()
+                and len(self.raw_query_result["data"]) > 0
+                and "_shodan" in self.raw_query_result["data"][0].keys()
             ):
                 return ShodanSourceConnector
             elif (
-                "services" in self.raw_result.keys()
-                and "last_updated_at" in self.raw_result.keys()
+                "services" in self.raw_query_result.keys()
+                and "last_updated_at" in self.raw_query_result.keys()
             ):
                 return CensysSourceConnector
             # Cases for generic host query
             elif (
-                "matches" in self.raw_result.keys()
-                and "total" in self.raw_result.keys()
+                "matches" in self.raw_query_result.keys()
+                and "total" in self.raw_query_result.keys()
             ):
                 return ShodanSourceConnector
             else:
-                logger.warn("Could not determine SourceConnector type.")
-                print(self.raw_result)
+                logger.warning("Could not determine SourceConnector type.")
+                print(self.raw_query_result)
                 return None
-        elif isinstance(self.raw_result, list):
+        elif isinstance(self.raw_query_result, list):
             return CensysSourceConnector
 
     @property
     def is_collection(self) -> bool:
         if (
-            isinstance(self.raw_result, dict)
-            and "matches" in self.raw_result.keys()
-            and "total" in self.raw_result.keys()
-        ) or isinstance(self.raw_result, list):
+            isinstance(self.raw_query_result, dict)
+            and "matches" in self.raw_query_result.keys()
+            and "total" in self.raw_query_result.keys()
+        ) or isinstance(self.raw_query_result, list):
             return True
         else:
             return False
@@ -89,9 +90,9 @@ class QueryResult:
     @property
     def element_count(self) -> int:
         if self.is_collection and self.source is ShodanSourceConnector:
-            return len(self.raw_result["matches"])
+            return len(self.raw_query_result["matches"])
         elif self.is_collection and self.source is CensysSourceConnector:
-            return len(self.raw_result)
+            return len(self.raw_query_result)
         elif not self.is_collection:
             return 1  # Case for only one element (no collection)
 
@@ -107,10 +108,12 @@ class Querying:
                 f'Query for "{host}" with service {connection.__class__.__name__}.'
             )
             return QueryResult(
-                connection.query_host(host), query_command="host", search_term=host
+                raw_query_result=connection.query_host(host),
+                query_command="host",
+                search_term=host,
             )
         else:
-            logger.warn(
+            logger.warning(
                 "Did not find connector. Raising NotImplementedError Exception."
             )
             raise NotImplementedError("Did not find HostQuery connector.")
@@ -129,7 +132,9 @@ class Querying:
             conn_result = connection.query_host_search(search)
             if conn_result is not None:
                 query_result = QueryResult(
-                    conn_result, query_command="generic", search_term=search
+                    raw_query_result=conn_result,
+                    query_command="generic",
+                    search_term=search,
                 )
                 if not expand:
                     return (query_result, None)
@@ -149,7 +154,7 @@ class Querying:
             else:
                 return (None, None)
         else:
-            logger.warn(
+            logger.warning(
                 "Did not find connector. Raising NotImplementedError Exception."
             )
             raise NotImplementedError("Did not find HostQuery connector.")
@@ -162,8 +167,3 @@ class Querying:
 
         if output_format == "json":
             JSONPrinter().query_output(query_result, raw=raw)
-
-        if output_format == "opensearch":
-            OpenSearchConnector(config["connectors"]["opensearch"]).query_output(
-                query_result=query_result, raw=raw
-            )

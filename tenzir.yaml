@@ -1,0 +1,67 @@
+tenzir:
+  pipelines:
+    subscribe-pivottrack-results-hosts:
+      name: Ingest New Host Findings
+      description: |
+        Onboards Suricata EVE JSON from RabbitMQ, running on the local instance.
+      definition: |
+        let $mq_user=env("PT_RABBITMQ_USER")
+        let $mq_pass=env("PT_RABBITMQ_PASS")
+        let $mq_host=env("PT_RABBITMQ_HOST")
+        let $mq_port=env("PT_RABBITMQ_PORT")
+        load_amqp "amqp://"+$mq_user+":"+$mq_pass+"@"+$mq_host+":"+$mq_port, queue="pivottrack-results-hosts", no_auto_delete=true, durable=true
+        read_json
+        unroll com_query_results
+        host = com_query_results
+        drop com_query_results
+        @name = "pivottrack.host-events"
+        import
+      restart-on-error: 1 minute
+      labels:
+        - PivotTrack
+      disabled: false
+      unstoppable: true
+    publish-hosts:
+      name: Export Hosts and Identify New Ones
+      description: |
+        Exports host events and publishes them to their designated pipelines.
+      definition: |
+        export live=true
+        where @name == "pivottrack.host-events"
+        context::enrich "pthostscontext", key=host.ip, into=knownhosts
+        set known = true if knownhosts != null else false
+        drop knownhosts
+        publish "pivottrack.hosts"
+      restart-on-error: 1 minute
+      labels:
+        - PivotTrack
+      disabled: false
+      unstoppable: true
+    update-host-context-new:
+      name: Update Host Context
+      description: |
+        Updates the context to identify new hosts.
+      definition: |
+        subscribe "pivottrack.hosts"
+        context::update "pthostscontext", key=host.ip, value=true, write_timeout = 7d
+      restart-on-error: 1 minute
+      labels:
+        - PivotTrack
+      disabled: false
+      unstoppable: true
+    publish-new-hosts:
+      name: Publish new hosts to topic "pivottrack.new-hosts"
+      description: |
+        Publish new hosts to topic "pivottrack.new"
+      definition: |
+        subscribe "pivottrack.hosts"
+        where known == true
+        publish "pivottrack.new"
+      restart-on-error: 1 minute
+      labels:
+        - PivotTrack
+      disabled: false
+      unstoppable: true
+  contexts:
+    pthostscontext:
+      type: lookup-table

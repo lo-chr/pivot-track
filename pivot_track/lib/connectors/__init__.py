@@ -1,11 +1,9 @@
 from .interface import (
-    SourceConnector,
-    HostQuery,
-    OutputConnector,
-    NotificationConnector,
+    SourceConnector as SourceConnector,
+    HostQuery as HostQuery,
+    OutputConnector as OutputConnector,
 )
-from .opensearch import OpenSearchConnector
-from .shodan import ShodanSourceConnector
-from .censys import CensysSourceConnector
-from .printer import CLIPrinter, JSONPrinter
-from .file import FileConnector
+from .rabbitmq import RabbitMQConnector as RabbitMQConnector
+from .shodan import ShodanSourceConnector as ShodanSourceConnector
+from .censys import CensysSourceConnector as CensysSourceConnector
+from .printer import CLIPrinter as CLIPrinter, JSONPrinter as JSONPrinter

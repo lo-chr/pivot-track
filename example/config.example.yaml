@@ -3,23 +3,22 @@
 logging:
   level: "INFO"
   logfile: "pivottrack.log"   # Can also be full path
-tracking_file: "findings.txt"
 # Configuration of connectors
 connectors:
   # Find your Shodan API key on https://account.shodan.io
   shodan:
     api_key: "CHANGEME"
     rate_limit: 1     # API request per second
-  # Find your Censys API data on https://search.censys.io/account/api
+  # Find your Censys API key on https://search.censys.io/account/api
   censys:
     api_id: "CHANGEME"
     api_secret: "CHANGEME"
     rate_limit: 1     # API request per second
     enabled: False
-  opensearch:
-    host: "CHANGEME"
-    port: 9200
-    user: "CHANGEME"
-    pass: "CHANGEME"
-    verify_certs: True 
-    index_prefix: "pivottrack"
+  rabbitmq:
+    host: "localhost"
+    port: 5672
+    virtual_host: "/"
+    username: "CHANGEME"
+    password: "CHANGEME"
+    results_exchange: "pivottrack-results"

@@ -2,7 +2,7 @@ import pytest
 from .mocks import (
     MockCensysSourceConnector,
     MockShodanSourceConnector,
-    MockOpenSearchConnector,
+    MockRabbitMQConnector,
 )
 from pydantic import ValidationError
 import pathlib
@@ -25,8 +25,8 @@ class TestTrackingDefinition:
         definition = TrackingDefinition.from_dict(definition=definition_dict)
         assert isinstance(definition, TrackingDefinition)
         assert str(definition.uuid) == definition_dict["uuid"]
-        assert TrackingQuery.from_dict(query_dict1) in definition.queries
-        assert TrackingQuery.from_dict(query_dict2) in definition.queries
+        assert TrackingQuery.from_dict(query_dict1) in definition.query
+        assert TrackingQuery.from_dict(query_dict2) in definition.query
         assert "censys" in definition.sources
         assert "shodan" in definition.sources
 
@@ -74,8 +74,8 @@ class TestTrackingDefinition:
             "status": "testing",
             "description": "this is an example description",
             "author": "Ex Ample",
-            "created": "2024/09/29",
-            "modified": "2024/09/29",
+            "created": "2024-09-29",
+            "modified": "2024-09-29",
             "tags": ["test", "unit", "example"],
             "output": "example",
         }
@@ -87,11 +87,11 @@ class TestTrackingDefinition:
         assert str(definition.status) == definition_dict["status"]
         assert str(definition.description) == definition_dict["description"]
         assert str(definition.author) == definition_dict["author"]
-        assert definition.created.strftime("%Y/%m/%d") == definition_dict["created"]
-        assert definition.modified.strftime("%Y/%m/%d") == definition_dict["modified"]
+        assert definition.created.strftime("%Y-%m-%d") == definition_dict["created"]
+        assert definition.modified.strftime("%Y-%m-%d") == definition_dict["modified"]
         assert definition.tags == definition_dict["tags"]
         assert str(definition.output) == definition_dict["output"]
-        assert TrackingQuery.from_dict(query_dict1) in definition.queries
+        assert TrackingQuery.from_dict(query_dict1) in definition.query
 
     def test_full_definition_yaml(self):
         definition_yaml = """title: Default cobaltstrike servers
@@ -99,8 +99,8 @@ uuid: af8bda70-0714-4ecd-a275-7dcabaac2bf9
 status: test
 description: This query adresses searches for Cobaltstrike servers in default configuration
 author: Christoph Lobmeyer
-created: 2024/09/04
-modified: 2024/09/04
+created: 2024-09-04
+modified: 2024-09-04
 tags:
   - tlp.white
   - cobaltstrike
@@ -112,19 +112,18 @@ query:
   - source: shodan
     command: host_generic
     query: ssl.cert.serial:146473198
-    expand: True
-output: opensearch"""
+    expand: True"""
         definition = TrackingDefinition.from_yaml(definition=definition_yaml)
         assert isinstance(definition, TrackingDefinition)
         assert str(definition.uuid) == "af8bda70-0714-4ecd-a275-7dcabaac2bf9"
         assert str(definition.title) == "Default cobaltstrike servers"
-        assert definition.created.strftime("%Y/%m/%d") == "2024/09/04"
-        assert definition.modified.strftime("%Y/%m/%d") == "2024/09/04"
+        assert definition.created.strftime("%Y-%m-%d") == "2024-09-04"
+        assert definition.modified.strftime("%Y-%m-%d") == "2024-09-04"
         assert len(definition.queries_by_source("censys")) == 1
         assert len(definition.queries_by_source("shodan")) == 1
         assert len(definition.queries_by_command("host_generic")) == 2
-        assert type(definition.queries_by_source("censys")) is type(definition.queries)
-        assert type(definition.queries_by_source("censys")) is type(definition.queries)
+        assert type(definition.queries_by_source("censys")) is type(definition.query)
+        assert type(definition.queries_by_source("censys")) is type(definition.query)
         assert (
             len(definition.queries_by_filter(command="host_generic", source="censys"))
             == 1
@@ -226,8 +225,8 @@ uuid: af8bda70-0714-4ecd-a275-7dcabaac2bf9
 status: test
 description: This query adresses searches for Cobaltstrike servers in default configuration
 author: Christoph Lobmeyer
-created: 2024/09/04
-modified: 2024/09/04
+created: 2024-09-04
+modified: 2024-09-04
 tags:
   - tlp.white
   - cobaltstrike
@@ -239,8 +238,7 @@ query:
   - source: shodan
     command: host_generic
     query: ssl.cert.serial:146473198
-    expand: True
-output: opensearch"""
+    expand: True"""
         mocked_yaml_definition = mocker.mock_open(read_data=definition_yaml)
         mocker.patch("pivot_track.lib.track.open", mocked_yaml_definition)
         mocker.patch("pathlib.Path.exists", return_value=True)
@@ -283,36 +281,14 @@ output: opensearch"""
         query_results = Tracking.execute_tracking_queries(queries, mock_shodan)
         assert len(query_results) == 2
 
-    def test_execute_tracking_queries_opensearch(self, mocker):
-        query_dict1 = {
-            "source": "shodan",
-            "command": "host_generic",
-            "query": "example query",
-        }
-
-        query_dict2 = {"source": "censys", "command": "host", "query": "example query"}
-
-        queries = [
-            TrackingQuery.from_dict(query_dict1),
-            TrackingQuery.from_dict(query_dict2),
-        ]
-        mock_shodan = MockShodanSourceConnector()
-        mock_opensearch = MockOpenSearchConnector()
-        spy = mocker.spy(mock_opensearch, "query_output")
-        query_results = Tracking.execute_tracking_queries(
-            queries, mock_shodan, mock_opensearch
-        )
-        assert len(query_results) == 2
-        assert spy.call_count == 2
-
     def test_track_source(self, mocker):
         definition_yaml = """title: Default cobaltstrike servers
 uuid: af8bda70-0714-4ecd-a275-7dcabaac2bf9
 status: test
 description: This query adresses searches for Cobaltstrike servers in default configuration
 author: Christoph Lobmeyer
-created: 2024/09/04
-modified: 2024/09/04
+created: 2024-09-04
+modified: 2024-09-04
 tags:
   - tlp.white
   - cobaltstrike
@@ -324,8 +300,7 @@ query:
   - source: shodan
     command: host_generic
     query: ssl.cert.serial:146473198
-    expand: True
-output: opensearch"""
+    expand: True"""
         definition = TrackingDefinition.from_yaml(definition_yaml)
 
         query_dict1 = {"source": "shodan", "command": "host", "query": "example query"}
@@ -336,22 +311,26 @@ output: opensearch"""
 
         mock_shodan = MockShodanSourceConnector()
         mock_censys = MockCensysSourceConnector()
-        mock_opensearch = MockOpenSearchConnector()
-        spy_opensearch_query_output = mocker.spy(mock_opensearch, "query_output")
-        spy_opensearch_tracking_output = mocker.spy(mock_opensearch, "tracking_output")
+        mock_rabbitmq = MockRabbitMQConnector()
+        spy_rabbitmq_tracking_output = mocker.spy(
+            mock_rabbitmq, "definition_track_output"
+        )
         spy_shodan = mocker.spy(mock_shodan, "query_host_search")
         spy_censys = mocker.spy(mock_censys, "query_host_search")
 
-        Tracking.track_definitions_for_source(
-            [definition], mock_shodan, mock_opensearch
+        Tracking.run_definitions_for_source(
+            definitions=[definition],
+            source_connection=mock_shodan,
+            output_connection=mock_rabbitmq,
         )
-        Tracking.track_definitions_for_source(
-            [definition, definition2], mock_censys, mock_opensearch
+        Tracking.run_definitions_for_source(
+            definitions=[definition, definition2],
+            source_connection=mock_censys,
+            output_connection=mock_rabbitmq,
         )
         assert spy_shodan.call_count == 1
         assert spy_censys.call_count == 1
-        assert spy_opensearch_query_output.call_count == 2
-        assert spy_opensearch_tracking_output.call_count == 3
+        assert spy_rabbitmq_tracking_output.call_count == 3
 
     def test_definitions_by_source(self):
         definition_yaml = """title: Default cobaltstrike servers
@@ -359,8 +338,8 @@ uuid: af8bda70-0714-4ecd-a275-7dcabaac2bf9
 status: test
 description: This query adresses searches for Cobaltstrike servers in default configuration
 author: Christoph Lobmeyer
-created: 2024/09/04
-modified: 2024/09/04
+created: 2024-09-04
+modified: 2024-09-04
 tags:
   - tlp.white
   - cobaltstrike
@@ -372,8 +351,7 @@ query:
   - source: shodan
     command: host_generic
     query: ssl.cert.serial:146473198
-    expand: True
-output: opensearch"""
+    expand: True"""
         definition = TrackingDefinition.from_yaml(definition_yaml)
 
         query_dict1 = {"source": "shodan", "command": "host", "query": "example query"}
@@ -399,8 +377,8 @@ uuid: af8bda70-0714-4ecd-a275-7dcabaac2bf9
 status: test
 description: This query adresses searches for Cobaltstrike servers in default configuration
 author: Christoph Lobmeyer
-created: 2024/09/04
-modified: 2024/09/04
+created: 2024-09-04
+modified: 2024-09-04
 tags:
   - tlp.white
   - cobaltstrike
@@ -412,8 +390,7 @@ query:
   - source: shodan
     command: host_generic
     query: ssl.cert.serial:146473198
-    expand: True
-output: opensearch"""
+    expand: True"""
         definition = TrackingDefinition.from_yaml(definition_yaml)
 
         query_dict1 = {
@@ -428,16 +405,18 @@ output: opensearch"""
 
         mock_shodan = MockShodanSourceConnector()
         mock_censys = MockCensysSourceConnector()
-        mock_opensearch = MockOpenSearchConnector()
-        spy_opensearch_query_output = mocker.spy(mock_opensearch, "query_output")
-        spy_opensearch_tracking_output = mocker.spy(mock_opensearch, "tracking_output")
+        mock_rabbitmq = MockRabbitMQConnector()
+        spy_rabbitmq_tracking_output = mocker.spy(
+            mock_rabbitmq, "definition_track_output"
+        )
         spy_shodan = mocker.spy(mock_shodan, "query_host_search")
         spy_censys = mocker.spy(mock_censys, "query_host_search")
 
-        Tracking.track_definitions(
-            [definition, definition2], [mock_shodan, mock_censys], mock_opensearch
+        Tracking.run_definitions(
+            definitions=[definition, definition2],
+            source_connections=[mock_shodan, mock_censys],
+            output_connection=mock_rabbitmq,
         )
         assert spy_shodan.call_count == 2
         assert spy_censys.call_count == 1
-        assert spy_opensearch_query_output.call_count == 3
-        assert spy_opensearch_tracking_output.call_count == 3
+        assert spy_rabbitmq_tracking_output.call_count == 3

@@ -1,7 +1,7 @@
 from pivot_track.lib.connectors import (
     CensysSourceConnector,
     ShodanSourceConnector,
-    OpenSearchConnector,
+    RabbitMQConnector,
 )
 
 # Censys examples based on https://github.com/censys/censys-python/blob/main/tests/search/v2/test_hosts.py
@@ -278,7 +278,7 @@ class MockCensysSourceConnector(CensysSourceConnector):
         return CENSYS_SEARCH_JSON
 
 
-class MockOpenSearchConnector(OpenSearchConnector):
+class MockRabbitMQConnector(RabbitMQConnector):
     def __init__(self):
         pass
 
@@ -288,9 +288,5 @@ class MockOpenSearchConnector(OpenSearchConnector):
     def available(self):
         return True
 
-    def tracking_output(self, query_result, definition):
-        new_elements = list()
-        com_list = self.query_result_to_com_list(query_result)
-        for com_result_element in com_list:
-            new_elements.append(com_result_element)
-        return new_elements
+    def definition_track_output(self, tracking_result):
+        tracking_result.model_dump_json(exclude={"raw_query_results", "query_results"})

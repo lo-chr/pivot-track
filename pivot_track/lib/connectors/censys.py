@@ -9,23 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 class CensysSourceConnector(SourceConnector, HostQuery):
-    OPENSEARCH_FIELD_PROPERTIES = {
-        "censys-host-raw": {
-            "services.certificate": {"type": "keyword"},
-            "services.source_ip": {"type": "ip"},
-            "ip": {"type": "ip"},
-            "services.port": {"type": "integer"},
-            "autonomous_system.asn": {"type": "integer"},
-            "last_updated_at": {"type": "date_nanos"},
-        },
-        "censys-generic-raw": {
-            "result.ip": {"type": "ip"},
-            "result.last_updated_at": {"type": "date_nanos"},
-            "result.services.certificate": {"type": "keyword"},
-            "result.services.port": {"type": "integer"},
-        },
-    }
-
     def __init__(self, config):
         logger.debug("Created new instance of class CensysSourceConnector")
         self.config = config  # Set Config data
@@ -36,7 +19,7 @@ class CensysSourceConnector(SourceConnector, HostQuery):
         self._update_last_call()
 
     def query_host(self, host: str):
-        logger.info(f'Query host "{host}"')
+        logger.debug(f'Query host "{host}"')
 
         self._api_throttle()
         try:
@@ -51,7 +34,7 @@ class CensysSourceConnector(SourceConnector, HostQuery):
             return None
 
     def query_host_search(self, query: str):
-        logger.info(f'Query for hosts with query "{query}"')
+        logger.debug(f'Query for hosts with query "{query}"')
 
         self._api_throttle()
         try:

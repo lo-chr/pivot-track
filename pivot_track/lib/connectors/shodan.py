@@ -9,15 +9,6 @@ logger = logging.getLogger(__name__)
 class ShodanSourceConnector(SourceConnector, HostQuery):
     """Connector for Shodan"""
 
-    OPENSEARCH_FIELD_PROPERTIES = {
-        "shodan-host-raw": {
-            "data.ssl.cert.serial": {"type": "keyword"},
-            "data.ip_str": {"type": "ip"},
-            "ip_str": {"type": "ip"},
-        },
-        "shodan-generic-raw": {"matches.ip_str": {"type": "ip"}},
-    }
-
     def __init__(self, config):
         logger.debug("Created new instance of class ShodanSourceConnector")
         self.config = config  # Set Config data

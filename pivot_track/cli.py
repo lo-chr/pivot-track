@@ -3,16 +3,12 @@ import logging
 import time
 from typing_extensions import Annotated
 from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, TextColumn
 from pathlib import Path
 
 from pivot_track.lib import utils
-from pivot_track.lib.track import Tracking
+from pivot_track.lib.track import TrackingService
 from pivot_track.lib.query import Querying
-from pivot_track.lib.connectors import (
-    OpenSearchConnector,
-    SourceConnector,
-    FileConnector,
-)
 
 
 def init_logging(config) -> dict:
@@ -40,7 +36,12 @@ query_app = typer.Typer(
     help="This module helps to query different sources of OSINT platforms and databases.",
     pretty_exceptions_show_locals=False,
 )
+service_app = typer.Typer(
+    help="For the service",
+    pretty_exceptions_show_locals=False,
+)
 app.add_typer(query_app, name="query")
+app.add_typer(service_app, name="service")
 
 err_console = Console(stderr=True, style="bold red")
 
@@ -147,16 +148,16 @@ def query_generic(
         exit(-1)
 
 
-@app.command(
-    "track",
-    help="This command runs Pivot Track in non-interactive mode, to execute queries automatically.",
+@service_app.command(
+    "publish-definitions",
+    help="Publish definitions to Task Queue.",
 )
-def automatic_track(
+def publish_definitions(
     config_path: Annotated[str, typer.Option(envvar="PIVOTTRACK_CONFIG")] = None,
     definition_path: Annotated[
         str, typer.Option(envvar="PIVOTTRACK_TRACK_DEFINITIONS")
     ] = None,
-    run_once: Annotated[bool, typer.Option(envvar="PIVOTTRACK_TRACK_RUNONCE")] = False,
+    run_once: Annotated[bool, typer.Option(envvar="PIVOTTRACK_TRACK_RUNONCE")] = True,
     interval: Annotated[
         int, typer.Option(envvar="PIVOTTRACK_TRACK_INTERVAL")
     ] = 600,  # Default to 10 minutes
@@ -167,42 +168,31 @@ def automatic_track(
 
     config = utils.load_config(Path(config_path))
     init_logging(config)
-    logger = logging.getLogger(__name__)
-    logger.info(
-        f'Starting automatic tracking service with config file "{config_path}" and tracking definitions "{definition_path}".'
-    )
+    tracking_service = TrackingService(config=config)
 
-    source_connections = utils.init_source_connections(config)
-    # For now we assume, that there is just one output connection (OpenSearch), this will change soon
-    output_connections = utils.init_output_connections(config)[0]
-    notification_connection = FileConnector(Path(config.get("tracking_file")))
-
-    init_opensearch(config_path)
     running = True
-
     while running:
-        definitions = Tracking.load_yaml_definition_files(Path(definition_path))
-        Tracking.track_definitions(
-            definitions=definitions,
-            source_connections=source_connections,
-            output_connection=output_connections,
-            notification_connection=notification_connection,
-        )
+        tracking_service.publish_tasks(Path(definition_path))
         if not run_once:
-            logger.info(
-                f"Done tracking for now. Waiting {interval} seconds for next try."
-            )
-            time.sleep(interval)
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                transient=True,
+            ) as progress:
+                progress.add_task(
+                    description=f"Waiting for {interval} seconds before next load.",
+                    total=None,
+                )
+                time.sleep(interval)
         else:
             running = False
-            logger.info("Tracking finished.")
 
 
-@app.command(
-    "init-opensearch",
-    help="This command helps you initializing opensearch indicies, required for the '--output opensearch' option.",
+@service_app.command(
+    "subscribe-definitions",
+    help="Consume tracking definitions from RabbitMQ task queue and execute them.",
 )
-def init_opensearch(
+def subscribe_definitions(
     config_path: Annotated[str, typer.Option(envvar="PIVOTTRACK_CONFIG")] = None,
 ):
     if config_path is None:
@@ -211,18 +201,8 @@ def init_opensearch(
 
     config = utils.load_config(Path(config_path))
     init_logging(config)
-
-    opensearch = OpenSearchConnector(config["connectors"]["opensearch"])
-    for connector in utils.subclasses_by_parent(SourceConnector):
-        if connector.OPENSEARCH_FIELD_PROPERTIES is not None:
-            for (
-                index_name,
-                index_field_properties,
-            ) in connector.OPENSEARCH_FIELD_PROPERTIES.items():
-                opensearch.init_pivottrack_query_index(
-                    index_name, index_field_properties
-                )
-    opensearch.init_pivottrack_tracking_index()
+    tracking_service = TrackingService(config)
+    tracking_service.subscribe_tasks()
 
 
 if __name__ == "__main__":

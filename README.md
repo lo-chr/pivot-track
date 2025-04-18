@@ -6,7 +6,6 @@ The current feature set of PivotTrack is:
 - **Query Sources:** Use Pivot Track to interact with different OSINT sources (for now Censys and Shodan)
 - **Store Results:** Store the results of your queries, so that you do not have to repeat them all the time
 - **Track Infrastructure:** Run Querys at a pre-defined interval and store results to a predefined output (for now OpenSearch)
-- **Get Notifications:** Get notifications for newly found infrastructure (for now in a file)
 
 > [!NOTE]  
 > Pivot Track is still work in progress and has been implemented during my personal experiments with automation of OSINT research.
@@ -14,25 +13,22 @@ The current feature set of PivotTrack is:
 ## Usage
 
 ```
- Usage: pivottrack [OPTIONS] COMMAND [ARGS]...
-
- Pivot Track helps TI analysts to pivot on IoC and to track their research.
-
-╭─ Options ──────────────────────────────────────────────────────────────────────────╮
-│ --install-completion          Install completion for the current shell.            │
-│ --show-completion             Show completion for the current shell, to copy it or │
-│                               customize the installation.                          │
-│ --help                        Show this message and exit.                          │
-╰────────────────────────────────────────────────────────────────────────────────────╯
-╭─ Commands ─────────────────────────────────────────────────────────────────────────╮
-│ init-opensearch   This command helps you initializing opensearch indicies,         │
-│                   required for the '--output opensearch' option.                   │
-│ query             This module helps to query different sources of OSINT platforms  │
-│                   and databases.                                                   │
-│ track             This command runs pivottrack in non-interactive mode, to execute │
-│                   queries automatically.                                           │
-╰────────────────────────────────────────────────────────────────────────────────────╯
-
+ Usage: pivottrack [OPTIONS] COMMAND [ARGS]...                                  
+                                                                                
+ Pivot Track helps TI analysts to pivot on IoC and to track their research.     
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --install-completion          Install completion for the current shell.      │
+│ --show-completion             Show completion for the current shell, to copy │
+│                               it or customize the installation.              │
+│ --help                        Show this message and exit.                    │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ query     This module helps to query different sources of OSINT platforms    │
+│           and databases.                                                     │
+│ service   This module provides capabilities for running tracking definitions │
+│           automatically.                                                     │
+╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 
 ### Run Queries:
@@ -91,32 +87,23 @@ A "generic" search is a search, that uses the query language of a given OSINT so
 
 ### Track Infrastructure:
 ```
- Usage: pivottrack track [OPTIONS]
-
- This command runs Pivot Track in non-interactive mode, to execute queries
- automatically.
-
+ Usage: pivottrack service [OPTIONS] COMMAND [ARGS]...                                
+                                                                                      
+ This module provides capabilities for running tracking definitions automatically.    
+                                                                                      
 ╭─ Options ──────────────────────────────────────────────────────────────────────────╮
-│ --config-path                         TEXT     [env var: PIVOTTRACK_CONFIG]        │
-│                                                [default: None]                     │
-│ --definition-path                     TEXT     [env var:                           │
-│                                                PIVOTTRACK_TRACK_DEFINITIONS]       │
-│                                                [default: None]                     │
-│ --run-once           --no-run-once             [env var: PIVOTTRACK_TRACK_RUNONCE] │
-│                                                [default: no-run-once]              │
-│ --interval                            INTEGER  [env var:                           │
-│                                                PIVOTTRACK_TRACK_INTERVAL]          │
-│                                                [default: 600]                      │
-│ --help                                         Show this message and exit.         │
+│ --help          Show this message and exit.                                        │
+╰────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ─────────────────────────────────────────────────────────────────────────╮
+│ publish-definitions     Search for definitions and publish them to task queue.     │
+│ subscribe-definitions   Consume tracking definitions from task queue and execute   │
+│                         them.                                                      │
 ╰────────────────────────────────────────────────────────────────────────────────────╯
 ```
 The definitions, used for automatic tracking, have to follow a certain format. You can find an example [here](https://github.com/lo-chr/pivot-track/blob/main/example/tracking-cobaltstrike.example.yml).
 
 ## Setup
 ### Setup for CLI
-> [!IMPORTANT]  
-> This setup guide does not cover the [OpenSearch setup](https://opensearch.org/docs/latest/install-and-configure/install-opensearch/index/).
-> Providing valid OpenSearch settings is required for using the `track` command and for the `opensearch` output of `query`.
 1. Create folder for setup: `mkdir pivottrack && cd pivottrack`
 1. Clone this repository: `git clone https://github.com/lo-chr/pivot-track.git`
 1. Copy example configuration file: `cp pivot-track/example/config.example.yaml config.cli.yaml`

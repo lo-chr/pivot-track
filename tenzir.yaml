@@ -1,9 +1,9 @@
 tenzir:
   pipelines:
     subscribe-pivottrack-results-hosts:
-      name: Ingest New Host Findings
+      name: Ingest Common OSINT Model Host Findings
       description: |
-        Onboards Suricata EVE JSON from RabbitMQ, running on the local instance.
+        Onboards Common OSINT Model (COM) information, created by Pivottrack and ingest data into node.
       definition: |
         let $mq_user=env("PT_RABBITMQ_USER")
         let $mq_pass=env("PT_RABBITMQ_PASS")
@@ -22,41 +22,31 @@ tenzir:
       disabled: false
       unstoppable: true
     publish-hosts:
-      name: Export Hosts and Identify New Ones
+      name: Export COM data and publish to topic
       description: |
         Exports host events and publishes them to their designated pipelines.
       definition: |
         export live=true
         where @name == "pivottrack.host-events"
-        context::enrich "pthostscontext", key=host.ip, into=knownhosts
-        set known = true if knownhosts != null else false
-        drop knownhosts
-        publish "pivottrack.hosts"
+        publish "pivottrack.hosts.import"
       restart-on-error: 1 minute
       labels:
         - PivotTrack
       disabled: false
       unstoppable: true
     update-host-context-new:
-      name: Update Host Context
+      name: Enrich with and update Context
       description: |
         Updates the context to identify new hosts.
       definition: |
-        subscribe "pivottrack.hosts"
-        context::update "pthostscontext", key=host.ip, value=true, write_timeout = 7d
-      restart-on-error: 1 minute
-      labels:
-        - PivotTrack
-      disabled: false
-      unstoppable: true
-    publish-new-hosts:
-      name: Publish new hosts to topic "pivottrack.new-hosts"
-      description: |
-        Publish new hosts to topic "pivottrack.new"
-      definition: |
-        subscribe "pivottrack.hosts"
-        where known == true
-        publish "pivottrack.new"
+        subscribe "pivottrack.hosts.import"
+        context::enrich "pthostscontext", key=host.ip, into=knownhosts
+        set known = true if knownhosts != null else false
+        drop knownhosts
+        fork {
+          context::update "pthostscontext", key=host.ip, value=true
+        }
+        publish "pivottrack.hosts.enriched"
       restart-on-error: 1 minute
       labels:
         - PivotTrack
